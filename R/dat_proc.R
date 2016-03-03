@@ -1,4 +1,7 @@
-# # import the csv files, save as rdata objects for faster import
+
+######
+# import dnr fisheries csv files on Google docs
+# save as rdata objects for faster import
 #
 # library(dplyr)
 # 
@@ -134,7 +137,7 @@ fish_all <- mutate(fish_all,
   ) %>% 
   arrange(date, dow)
 
-save(fish_all, file = 'data/fish_all.RData')
-  
-  
+fish_dat <- fish_all
+save(fish_dat, file = 'data/fish_dat.RData')
+
 
