@@ -140,4 +140,4 @@ fish_all <- mutate(fish_all,
 fish_dat <- fish_all
 save(fish_dat, file = 'data/fish_dat.RData')
 
-
+# write.csv(fish_dat, file = 'ignore/fish_dat.csv', quote = F, row.names = F)
