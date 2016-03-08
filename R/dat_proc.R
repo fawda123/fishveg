@@ -23,6 +23,31 @@
 #   
 # }
 
+
+######
+# import dnr fisheries txt files on Google docs
+# save as rdata objects for faster import
+
+library(dplyr)
+
+fls <- list.files('C:/Users/mbeck/Desktop/', pattern = '\\.txt', full.names = T)
+for(fl in fls){
+  
+  # import file, get name, assign to object
+  cat(fl, '\n')
+  tmp <- read.csv(fl)
+  nm <- basename(fl) %>% 
+    gsub('_.*$', '', .) %>% 
+    paste0('fish_', .)
+  assign(nm, tmp)
+  
+  # save clean up workspace
+  save(list = nm, file = paste0('ignore/', nm, '.RData'), compress = 'xz')
+  rm(tmp)
+  rm(list = nm)
+  
+}
+
 # libraries
 library(reshape2)
 library(plyr)
