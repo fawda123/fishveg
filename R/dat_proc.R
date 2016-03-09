@@ -1,6 +1,3 @@
-# libraries
-library(dplyr)
-
 ######
 # import dnr fisheries csv files on Google docs
 # save as rdata objects for faster import
@@ -24,42 +21,44 @@ library(dplyr)
 #   rm(list = nm)
 #   
 # }
-
-######
-# import dnr fisheries txt files on Google docs
-# save as rdata objects for faster import
-
-fls <- list.files('C:/Users/mbeck/Desktop/fish_txt/', pattern = '\\.txt', full.names = T)
-for(fl in fls){
-  
-  cat(fl, '\n')
-  
-  # import file, get name, assign to object
-  tmp <- readLines(fl) %>%
-    strsplit(., split = '|', fixed = TRUE) %>%
-    do.call('rbind', .)
-  nms <- tmp[1, ]
-  tmp <- data.frame(tmp[-1, ], stringsAsFactors = FALSE)
-  names(tmp) <- nms
-  
-  # name of object for saving, make assignment
-  nm <- basename(fl) %>% 
-    gsub('_.*$', '', .) %>% 
-    paste0('fish_', .)
-  assign(nm, tmp)
-  
-  # save, clean up workspace
-  save(list = nm, file = paste0('ignore/', nm, '.RData'), compress = 'xz')
-  rm(tmp)
-  rm(list = nm)
-  
-}
+# 
+# ######
+# # import dnr fisheries txt files on Google docs
+# # save as rdata objects for faster import
+# 
+# library(dplyr)
+# 
+# fls <- list.files('C:/Users/mbeck/Desktop/fish_txt/', pattern = '\\.txt', full.names = T)
+# for(fl in fls){
+#   
+#   cat(fl, '\n')
+#   
+#   # import file, get name, assign to object
+#   tmp <- readLines(fl) %>%
+#     strsplit(., split = '|', fixed = TRUE) %>%
+#     do.call('rbind', .)
+#   nms <- tmp[1, ]
+#   tmp <- data.frame(tmp[-1, ], stringsAsFactors = FALSE)
+#   names(tmp) <- nms
+#   
+#   # name of object for saving, make assignment
+#   nm <- basename(fl) %>% 
+#     gsub('_.*$', '', .) %>% 
+#     paste0('fish_', .)
+#   assign(nm, tmp)
+#   
+#   # save, clean up workspace
+#   save(list = nm, file = paste0('ignore/', nm, '.RData'), compress = 'xz')
+#   rm(tmp)
+#   rm(list = nm)
+#   
+# }
 
 # libraries
 library(reshape2)
 library(plyr)
 library(dplyr)
-library(tidyr)
+# library(tidyr)
 
 # files to import and names
 fls <- list.files('ignore', '^fish_', full.names = TRUE)
@@ -86,6 +85,8 @@ spp <- c('CAP', 'BLG', 'BLC', 'WHC', 'GSF', 'BLB', 'YEB', 'YEP', 'NOP', 'LMB', '
 # import, format, append to output
 for(fl in seq_along(fls)){
     
+  cat(fl, 'of', length(fls), '\n')
+  
   # import the file
   load(file = fls[fl])
   dat <- get(nms[fl])
@@ -97,7 +98,10 @@ for(fl in seq_along(fls)){
       SURVEY_DATE_MONTH_NAME_DV %in% mos &
       FISH_SPECIES_ABBREV %in% spp
     ) %>% 
-    mutate(Species = NA) 
+    mutate(
+      TOTAL_LENGTH_MM = as.numeric(TOTAL_LENGTH_MM),
+      Species = NA
+      ) 
   
   # create length classes
   dat$Species[dat$FISH_SPECIES_ABBREV=="CAP" & dat$SURVEY_COMPONENT_CLASS_NAME=="Gill Netting"& dat$TOTAL_LENGTH_MM>300]<-"COC_300_GN"
@@ -124,7 +128,7 @@ for(fl in seq_along(fls)){
     "MAX_DEPTH_FEET","MEAN_DEPTH_FEET","SURVEY_DATE","SURVEY_DATE_MONTH_NAME_DV","SURVEY_DATE_CALENDAR_YEAR_DV",
     "SURVEY_COMPONENT_CLASS_NAME","SAMP_STA_TYPE_TOTAL_SETS_DV","Species"), summarize,
     N=length(TOTAL_LENGTH_MM))
-  dat$CPUE <- dat$N/dat$SAMP_STA_TYPE_TOTAL_SETS_DV
+  dat$CPUE <- dat$N/as.numeric(dat$SAMP_STA_TYPE_TOTAL_SETS_DV)
   
   dat <- melt(dat,
     id.var=c("REGION_NAME","LAKE_CLASS_ID_PRIMARY","DOW_NBR_PRIMARY","LAKE_AREA_GIS_ACRES",   
@@ -143,6 +147,8 @@ for(fl in seq_along(fls)){
   fish_ls[[nms[fl]]] <- dat
   
 }
+
+# data from Pre-1993 did not have bull head YOY, CPUE_BHD_YOY
 
 ######
 # combining the list
@@ -170,6 +176,13 @@ fish_all <- mutate(fish_all,
   arrange(date, dow)
 
 fish_dat <- fish_all
-save(fish_dat, file = 'data/fish_dat.RData')
 
-# write.csv(fish_dat, file = 'ignore/fish_dat.csv', quote = F, row.names = F)
+# combine with recent data
+load(file = 'data/fish_dat_orig.RData')
+
+fish_dat <- rbind(fish_dat, fish_dat_orig)
+fish_dat[order(fish_dat$date), ] <- fish_dat
+
+save(fish_dat, file = 'data/fish_dat.RData', compress = 'xz')
+
+write.csv(fish_dat, file = 'ignore/fish_dat.csv', quote = F, row.names = F)
