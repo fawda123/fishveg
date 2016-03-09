@@ -1,3 +1,5 @@
+# libraries
+library(dplyr)
 
 ######
 # import dnr fisheries csv files on Google docs
@@ -23,19 +25,23 @@
 #   
 # }
 
-
 ######
 # import dnr fisheries txt files on Google docs
 # save as rdata objects for faster import
 
-library(dplyr)
-
-fls <- list.files('C:/Users/mbeck/Desktop/', pattern = '\\.txt', full.names = T)
+fls <- list.files('C:/Users/mbeck/Desktop/fish_txt/', pattern = '\\.txt', full.names = T)
 for(fl in fls){
   
-  # import file, get name, assign to object
   cat(fl, '\n')
-  tmp <- read.csv(fl)
+  
+  # import file, get name, assign to object
+  tmp <- readLines(fl) %>%
+    strsplit(., split = '|', fixed = TRUE) %>%
+    do.call('rbind', .)
+  nms <- tmp[1, ]
+  tmp <- data.frame(tmp[-1, ], stringsAsFactors = FALSE)
+  names(tmp) <- nms
+  
   nm <- basename(fl) %>% 
     gsub('_.*$', '', .) %>% 
     paste0('fish_', .)
