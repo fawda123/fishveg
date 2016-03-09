@@ -42,12 +42,13 @@ for(fl in fls){
   tmp <- data.frame(tmp[-1, ], stringsAsFactors = FALSE)
   names(tmp) <- nms
   
+  # name of object for saving, make assignment
   nm <- basename(fl) %>% 
     gsub('_.*$', '', .) %>% 
     paste0('fish_', .)
   assign(nm, tmp)
   
-  # save clean up workspace
+  # save, clean up workspace
   save(list = nm, file = paste0('ignore/', nm, '.RData'), compress = 'xz')
   rm(tmp)
   rm(list = nm)
