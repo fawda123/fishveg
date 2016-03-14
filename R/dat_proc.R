@@ -1,5 +1,6 @@
 ######
 # import dnr fisheries csv files on Google docs
+# newer data
 # save as rdata objects for faster import
 #
 # library(dplyr)
@@ -24,6 +25,7 @@
 # 
 # ######
 # # import dnr fisheries txt files on Google docs
+# # older data
 # # save as rdata objects for faster import
 # 
 # library(dplyr)
@@ -61,7 +63,7 @@ library(dplyr)
 # library(tidyr)
 
 # files to import and names
-fls <- list.files('ignore', '^fish_', full.names = TRUE)
+fls <- list.files('ignore', '^fish_.*\\.RData$', full.names = TRUE)
 nms <- basename(fls) %>% 
   gsub('\\.RData', '', .)
 
@@ -176,13 +178,7 @@ fish_all <- mutate(fish_all,
   arrange(date, dow)
 
 fish_dat <- fish_all
-
-# combine with recent data
-load(file = 'data/fish_dat_orig.RData')
-
-fish_dat <- rbind(fish_dat, fish_dat_orig)
 fish_dat[order(fish_dat$date), ] <- fish_dat
-
 save(fish_dat, file = 'data/fish_dat.RData', compress = 'xz')
 
 write.csv(fish_dat, file = 'ignore/fish_dat.csv', quote = F, row.names = F)
