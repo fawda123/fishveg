@@ -201,7 +201,7 @@ load(file = 'ignore/trans_dat_current.RData')
 # nrri processing
 
 # processing veg codes to remove redundancies
-vegcodes_nrri <- select(vegcodes_nrri, NRRILUMP, COMMONNAME, SCIEN_NAME) %>% 
+vegcodes_nrri <- select(vegcodes_nrri, NRRILUMP, COMMONNAME, SCIEN_NAME, SUB_VEG) %>% 
   unique %>% 
   filter(!NRRILUMP %in% c('ALGAE', 'not used', 'unknown', 'empty')) %>% 
   nest(COMMONNAME, SCIEN_NAME) %>% 
@@ -237,19 +237,26 @@ nrri_tmp <- select(trans_dat_nrri, LAKENUM, NRRILUMP, END_DATE, matches('^TRSECT
   select(-NRRILUMP) %>% 
   rename(
     common_name = COMMONNAME, 
-    scientific_name = SCIEN_NAME
+    scientific_name = SCIEN_NAME,
+    growth_form = SUB_VEG
     )
 
 
 ###
 # 2006 to present transect data
 
+# info on veg growth forms
+veg_growth <- read.csv('ignore/veg_growth.csv')
+veg_growth <- select(veg_growth, -SCIENTIFIC_NAME)
+
 curr_tmp <- select(trans_curr, DOW, SURVEY_ID_DATE, SAMP_STATION_NBR, ABUNDANCE_NAME, COMMON_NAME, SCIENTIFIC_NAME) %>% 
+  left_join(., veg_growth, by = 'COMMON_NAME') %>%  
   rename(
     dow = DOW, 
     date = SURVEY_ID_DATE, 
     transect = SAMP_STATION_NBR, 
     abundance = ABUNDANCE_NAME,
+    growth_form = growth,
     common_name = COMMON_NAME, 
     scientific_name = SCIENTIFIC_NAME
   ) %>% 
@@ -269,34 +276,29 @@ veg_dat <- rbind(curr_tmp, nrri_tmp) %>%
 
 save(veg_dat, file = 'data/veg_dat.RData', compress = 'xz')
 
+######
+# combine fish and veg data
+# veg data are summarized as total rich and total submsersed species rich
 
+rm(list = ls())
 
+data(veg_dat)
+data(fish_dat)
 
+###
+# first summarize veg transect data
 
+# raw transect data
+data(veg_dat)
 
-
-
-
-
-# info on veg growth forms
-veg_growth <- read.csv('ignore/veg_growth.csv')
-
-# macro rich by transect, includes richness by growth form from veg_growth
-# rich based on unique dow, survey id, and date
-veg_growth <- select(veg_growth, -SCIENTIFIC_NAME)
-veg_dat <- mutate(trans_curr, COMMON_NAME = as.character(COMMON_NAME)) %>% 
-  left_join(veg_growth, by = 'COMMON_NAME') %>% 
-  select(DOW, SURVEY_ID, SURVEY_ID_DATE, COMMON_NAME, growth) %>% 
+veg_summ <- select(veg_dat, dow, date, common_name, growth_form) %>% 
   unique %>% 
-  group_by(DOW, SURVEY_ID, SURVEY_ID_DATE) %>% 
+  group_by(dow, date) %>% 
   summarise(
-    veg_rich = length(COMMON_NAME),
-    S_rich = sum(growth == 'S'), 
-    E_rich = sum(growth == 'E'), 
-    F_rich = sum(growth == 'F'), 
-    T_rich = sum(growth == 'T')
+    veg_rich = length(common_name),
+    S_rich = sum(growth_form == 'S', na.rm = T)
     ) %>%
-  mutate(SURVEY_ID_DATE = as.Date(SURVEY_ID_DATE, '%m/%d/%y')) %>% 
-  rename(veg_date = SURVEY_ID_DATE) %>% 
-  ungroup(.) %>% 
-  mutate(DOW = as.numeric(DOW))
+  rename(veg_date = date) %>% 
+  ungroup(.) 
+
+
