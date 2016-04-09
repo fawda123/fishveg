@@ -1,4 +1,17 @@
 ######
+# processing and combining fish/veg data
+
+library(reshape2)
+library(plyr)
+library(dplyr)
+library(tidyr)
+library(purrr)
+
+######
+# DNR fish data, in the format of CPUE all species
+# adapted from Przemek's code
+
+###
 # import dnr fisheries csv files on Google docs
 # newer data
 # save as rdata objects for faster import
@@ -55,12 +68,6 @@
 #   rm(list = nm)
 #   
 # }
-
-# libraries
-library(reshape2)
-library(plyr)
-library(dplyr)
-# library(tidyr)
 
 # files to import and names
 fls <- list.files('ignore', '^fish_.*\\.RData$', full.names = TRUE)
@@ -182,3 +189,114 @@ fish_dat[order(fish_dat$date), ] <- fish_dat
 save(fish_dat, file = 'data/fish_dat.RData', compress = 'xz')
 
 write.csv(fish_dat, file = 'ignore/fish_dat.csv', quote = F, row.names = F)
+
+######
+# veg transect data
+
+load(file = 'ignore/trans_dat_nrri.RData')
+load(file = 'ignore/vegcodes_nrri.RData')
+load(file = 'ignore/trans_dat_current.RData')
+
+###
+# nrri processing
+
+# processing veg codes to remove redundancies
+vegcodes_nrri <- select(vegcodes_nrri, NRRILUMP, COMMONNAME, SCIEN_NAME) %>% 
+  unique %>% 
+  filter(!NRRILUMP %in% c('ALGAE', 'not used', 'unknown', 'empty')) %>% 
+  nest(COMMONNAME, SCIEN_NAME) %>% 
+  mutate(nms = map(data, function(x){
+    if(nrow(x) > 1) {
+      
+      sp <- x[grep(' sp\\.', x$SCIEN_NAME), ]
+      if(nrow(sp) == 0 ) x
+      else sp
+      
+    } else {
+      
+      x
+      
+    }
+  })) %>% 
+  unnest(nms)
+  
+# format nrri data and combine with codes to get common/speices names
+nrri_tmp <- select(trans_dat_nrri, LAKENUM, NRRILUMP, END_DATE, matches('^TRSECT')) %>% 
+  gather('transect', 'val', TRSECT01:TRSECT52) %>% 
+  filter(!is.na(val)) %>% 
+  filter(!val %in% 0) %>% 
+  mutate(
+    date = as.Date(as.character(END_DATE), format = '%Y-%m-%d'),
+    dow = as.numeric(LAKENUM), 
+    transect = as.numeric(gsub('^TRSECT', '', transect)), 
+    abundance = factor(val, levels = c(1, 3, 5), labels = c('Rare', 'Common', 'Abundant'))
+  ) %>% 
+  select(dow, date, transect, NRRILUMP, abundance) %>% 
+  left_join(., vegcodes_nrri, by = 'NRRILUMP') %>% 
+  filter(NRRILUMP != 'ALGAE') %>% 
+  select(-NRRILUMP) %>% 
+  rename(
+    common_name = COMMONNAME, 
+    scientific_name = SCIEN_NAME
+    )
+
+
+###
+# 2006 to present transect data
+
+curr_tmp <- select(trans_curr, DOW, SURVEY_ID_DATE, SAMP_STATION_NBR, ABUNDANCE_NAME, COMMON_NAME, SCIENTIFIC_NAME) %>% 
+  rename(
+    dow = DOW, 
+    date = SURVEY_ID_DATE, 
+    transect = SAMP_STATION_NBR, 
+    abundance = ABUNDANCE_NAME,
+    common_name = COMMON_NAME, 
+    scientific_name = SCIENTIFIC_NAME
+  ) %>% 
+  mutate(
+    dow = as.numeric(dow), 
+    date = as.Date(as.character(date), format = '%m/%d/%y'), 
+    transect = as.numeric(transect), 
+    common_name = as.character(common_name), 
+    scientific_name = as.character(scientific_name)
+  )
+
+###
+# combine nrri and current transect data
+
+veg_dat <- rbind(curr_tmp, nrri_tmp) %>% 
+  arrange(dow, date)
+
+save(veg_dat, file = 'data/veg_dat.RData', compress = 'xz')
+
+
+
+
+
+
+
+
+
+
+# info on veg growth forms
+veg_growth <- read.csv('ignore/veg_growth.csv')
+
+# macro rich by transect, includes richness by growth form from veg_growth
+# rich based on unique dow, survey id, and date
+veg_growth <- select(veg_growth, -SCIENTIFIC_NAME)
+veg_dat <- mutate(trans_curr, COMMON_NAME = as.character(COMMON_NAME)) %>% 
+  left_join(veg_growth, by = 'COMMON_NAME') %>% 
+  select(DOW, SURVEY_ID, SURVEY_ID_DATE, COMMON_NAME, growth) %>% 
+  unique %>% 
+  group_by(DOW, SURVEY_ID, SURVEY_ID_DATE) %>% 
+  summarise(
+    veg_rich = length(COMMON_NAME),
+    S_rich = sum(growth == 'S'), 
+    E_rich = sum(growth == 'E'), 
+    F_rich = sum(growth == 'F'), 
+    T_rich = sum(growth == 'T')
+    ) %>%
+  mutate(SURVEY_ID_DATE = as.Date(SURVEY_ID_DATE, '%m/%d/%y')) %>% 
+  rename(veg_date = SURVEY_ID_DATE) %>% 
+  ungroup(.) %>% 
+  mutate(DOW = as.numeric(DOW))
