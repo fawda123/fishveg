@@ -9,4 +9,6 @@ All data created in `R\dat_proc.R`.  Source data in the ignore folder were creat
 
 * `fish_dat.RData` DNR fisheries data, all dates, processed to show CPUE of each species using Przemek's methods
 
+* `fishveg_dat.RData` combined fisheries and veg data, veg data summarized by total rich and subm rich for each lake.  Fish and veg data combined to be +/- one year of each other.  
+
 * `veg_dat.RData` DNR veg transect data from 1992 to present, excluding 2004 and 2005.  Combo of NRRI veg data and data from carpveg project.  Format is dow, date, transect, species, and abundance category.  NRRI data were from a database in ignore folder and is a combo of the tables `COMBOvegefile52_LUMP2` and `VEGECODE_final5_fixed`, both saved as RData objects in the ignore folder.  

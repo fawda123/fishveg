@@ -287,6 +287,7 @@ data(fish_dat)
 
 ###
 # first summarize veg transect data
+# total rich and total subm rich
 
 # raw transect data
 data(veg_dat)
@@ -299,6 +300,21 @@ veg_summ <- select(veg_dat, dow, date, common_name, growth_form) %>%
     S_rich = sum(growth_form == 'S', na.rm = T)
     ) %>%
   rename(veg_date = date) %>% 
-  ungroup(.) 
+  ungroup(.) %>% 
+  mutate(
+    dow = as.character(dow)
+  )
 
+# merge with fish data, each row is a unique lake
+fishveg_dat <- inner_join(fish_dat, veg_summ, by = 'dow') %>% 
+  mutate(diff_dt = abs(date - veg_date)) %>% 
+  filter(diff_dt < 365) %>% 
+  group_by(dow) %>% 
+  filter(diff_dt == min(diff_dt)[1]) %>% 
+  arrange(dow) %>% 
+  select(-diff_dt, -year, -month) %>% 
+  rename(fish_dat = date)
 
+# save
+save(fishveg_dat, file = 'data/fishveg_dat.RData')
+write.csv(fishveg_dat, 'ignore/fishveg_dat.csv', quote = F, row.names = F)
