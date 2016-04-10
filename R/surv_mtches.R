@@ -4,26 +4,25 @@ library(dplyr)
 library(ggplot2)
 
 load(file = 'data/fish_dat.RData')
-load(file = 'ignore/trans_dat.RData')
+load(file = 'ignore/veg_dat.RData')
 
 # format trans_dat just to get unique dates, dows
-trans_dts <- select(trans_dat, DOW, SURVEY_ID_DATE) %>% 
+veg_dts <- select(veg_dat, dow, date) %>% 
   unique %>% 
-  rename(dow = DOW, date = SURVEY_ID_DATE) %>% 
-  mutate(
-    date = as.Date(as.character(date), format = '%m/%d/%y'),
-    dow = as.character(dow)
-    ) %>% 
+  mutate(dow = as.character(dow)) %>% 
   filter(dow = grepl('00$', dow))
   
 fish_dts <- select(fish_dat, dow, date, region) %>% 
   filter(region != '')
 
-comp_dts <- inner_join(trans_dts, fish_dts, by = 'dow') %>% 
+comp_dts <- inner_join(veg_dts, fish_dts, by = 'dow') %>% 
   mutate(diff_dt = abs(date.x - date.y)) %>% 
   group_by(dow, region) %>% 
   filter(diff_dt == min(diff_dt)[1]) %>% 
   arrange(dow)
+
+# # survey within +/- 365 days
+# sum(comp_dts$diff_dt < 365)
 
 # all lakes
 toplo <- cumsum(table(comp_dts$diff_dt))
