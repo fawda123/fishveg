@@ -6,6 +6,8 @@ library(plyr)
 library(dplyr)
 library(tidyr)
 library(purrr)
+library(readxl)
+library(foreign)
 
 ######
 # DNR fish data, in the format of CPUE all species
@@ -249,7 +251,7 @@ nrri_tmp <- select(trans_dat_nrri, LAKENUM, NRRILUMP, END_DATE, matches('^TRSECT
 veg_growth <- read.csv('ignore/veg_growth.csv')
 veg_growth <- select(veg_growth, -SCIENTIFIC_NAME)
 
-curr_tmp <- select(trans_curr, DOW, SURVEY_ID_DATE, SAMP_STATION_NBR, ABUNDANCE_NAME, COMMON_NAME, SCIENTIFIC_NAME) %>% 
+curr_tmp <- select(trans_dat, DOW, SURVEY_ID_DATE, SAMP_STATION_NBR, ABUNDANCE_NAME, COMMON_NAME, SCIENTIFIC_NAME) %>% 
   left_join(., veg_growth, by = 'COMMON_NAME') %>%  
   rename(
     dow = DOW, 
@@ -272,6 +274,49 @@ curr_tmp <- select(trans_curr, DOW, SURVEY_ID_DATE, SAMP_STATION_NBR, ABUNDANCE_
 # combine nrri and current transect data
 
 veg_dat <- rbind(curr_tmp, nrri_tmp) %>% 
+  arrange(dow, date)
+
+save(veg_dat, file = 'data/veg_dat.RData', compress = 'xz')
+
+###
+# add missing years (2004 and 2005) to veg_dat
+
+rm(list = ls())
+
+# veg codes to combine with transect data
+vegcod <- read_excel('ignore/VEGECODE.xlsx') %>% 
+  select(VEGECODE, COMMONNAME, SCIEN_NAME, SUB_VEG) %>% 
+  rename(
+    VEG_CODE = VEGECODE, 
+    common_name = COMMONNAME, 
+    scientific_name = SCIEN_NAME, 
+    growth_form = SUB_VEG
+    )
+
+# format transect data to match existing format for veg_dat
+# only for years 2004 and 2005
+mis_dat <- read.dbf('ignore/VEGEFIL.dbf') %>% 
+  select(-COMP_DATE, -START_DATE, -VERIFY_COD) %>% 
+  unite('dow', DOW_NUM, SUB_BASIN, sep = '') %>% 
+  gather( 'transect', 'abundance', TRANSECT1:TRANSECT10) %>% 
+  mutate(
+    date = as.Date(as.character(END_DATE), format = '%Y-%m-%d'), 
+    transect = gsub('TRANSECT', '', transect),
+    transect = as.numeric(TRANSNUM) + as.numeric(transect) - 1, 
+    abundance = factor(abundance, 
+      levels = c('A', 'C', 'N', 'R'), 
+      labels = c('Abundant', 'Common', 'NULL', 'Rare')
+      )
+    ) %>% 
+  select(-END_DATE, -TRANSNUM) %>% 
+  filter(!is.na(abundance)) %>% 
+  filter(date >= as.Date('2004-01-01') & date <= as.Date('2005-12-31')) %>% 
+  left_join(., vegcod, by = 'VEG_CODE') %>% 
+  select(dow, date, transect, abundance, common_name, scientific_name, growth_form)
+
+# combine missing data with veg dat
+data(veg_dat)
+veg_dat <- rbind(veg_dat, mis_dat) %>% 
   arrange(dow, date)
 
 save(veg_dat, file = 'data/veg_dat.RData', compress = 'xz')

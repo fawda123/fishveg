@@ -4,7 +4,7 @@ library(dplyr)
 library(ggplot2)
 
 load(file = 'data/fish_dat.RData')
-load(file = 'ignore/veg_dat.RData')
+load(file = 'data/veg_dat.RData')
 
 # format trans_dat just to get unique dates, dows
 veg_dts <- select(veg_dat, dow, date) %>% 
