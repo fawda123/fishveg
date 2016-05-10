@@ -330,13 +330,14 @@ rm(list = ls())
 data(veg_dat)
 data(fish_dat)
 
+# covariates
+covdat <- read.table('ignore/MNDNRwatersheds.txt', sep = ',', header = T)
+
 ###
 # first summarize veg transect data
 # total rich and total subm rich
 
 # raw transect data
-data(veg_dat)
-
 veg_summ <- select(veg_dat, dow, date, common_name, growth_form) %>% 
   unique %>% 
   group_by(dow, date) %>% 
@@ -358,8 +359,27 @@ fishveg_dat <- inner_join(fish_dat, veg_summ, by = 'dow') %>%
   filter(diff_dt == min(diff_dt)[1]) %>% 
   arrange(dow) %>% 
   select(-diff_dt, -year, -month) %>% 
-  rename(fish_dat = date)
+  rename(fish_date = date)
 
+# organize covariate data, merge with fishveg_dat
+covdat <- select(covdat, DOWLKNUM, depthft, LKACRES, shedaream2, SDI, PDEVL, PAG, secchi) %>% 
+  mutate(
+    depthm = depthft * 0.3048, 
+    aream2 = LKACRES * 4046.86,
+    phuman = PDEVL + PAG, 
+    sdi = SDI, 
+    secchim = secchi, 
+    dow = DOWLKNUM
+    ) %>% 
+  select(-depthft, -LKACRES, -PDEVL, -PAG, -SDI, -secchi, -DOWLKNUM)
+
+# combine fishveg_dat with covariates
+fishveg_dat <- select(fishveg_dat, -maxd_ft, -area_ac) %>% 
+  ungroup %>% 
+  mutate(dow = as.numeric(dow)) %>% 
+  left_join(., covdat, by = 'dow') %>% 
+  na.omit
+  
 # save
 save(fishveg_dat, file = 'data/fishveg_dat.RData')
 write.csv(fishveg_dat, 'ignore/fishveg_dat.csv', quote = F, row.names = F)
