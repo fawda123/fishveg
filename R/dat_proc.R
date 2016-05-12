@@ -2,7 +2,6 @@
 # processing and combining fish/veg data
 
 library(reshape2)
-library(plyr)
 library(dplyr)
 library(tidyr)
 library(purrr)
@@ -243,7 +242,6 @@ nrri_tmp <- select(trans_dat_nrri, LAKENUM, NRRILUMP, END_DATE, matches('^TRSECT
     growth_form = SUB_VEG
     )
 
-
 ###
 # 2006 to present transect data
 
@@ -262,12 +260,14 @@ curr_tmp <- select(trans_dat, DOW, SURVEY_ID_DATE, SAMP_STATION_NBR, ABUNDANCE_N
     common_name = COMMON_NAME, 
     scientific_name = SCIENTIFIC_NAME
   ) %>% 
+  filter(abundance != 'NULL') %>% 
   mutate(
     dow = as.numeric(dow), 
     date = as.Date(as.character(date), format = '%m/%d/%y'), 
     transect = as.numeric(transect), 
     common_name = as.character(common_name), 
-    scientific_name = as.character(scientific_name)
+    scientific_name = as.character(scientific_name), 
+    abundance = factor(abundance, levels = c('Rare', 'Common', 'Abundant'))
   )
 
 ###
@@ -302,14 +302,15 @@ mis_dat <- read.dbf('ignore/VEGEFIL.dbf') %>%
   mutate(
     date = as.Date(as.character(END_DATE), format = '%Y-%m-%d'), 
     transect = gsub('TRANSECT', '', transect),
-    transect = as.numeric(TRANSNUM) + as.numeric(transect) - 1, 
-    abundance = factor(abundance, 
-      levels = c('A', 'C', 'N', 'R'), 
-      labels = c('Abundant', 'Common', 'NULL', 'Rare')
-      )
+    transect = as.numeric(TRANSNUM) + as.numeric(transect) - 1
     ) %>% 
   select(-END_DATE, -TRANSNUM) %>% 
-  filter(!is.na(abundance)) %>% 
+  filter(!is.na(abundance) & abundance != 'N') %>% 
+  mutate(
+    abundance = factor(abundance, 
+      levels = c('A', 'C', 'R'), 
+      labels = c('Abundant', 'Common', 'Rare')
+    )) %>% 
   filter(date >= as.Date('2004-01-01') & date <= as.Date('2005-12-31')) %>% 
   left_join(., vegcod, by = 'VEG_CODE') %>% 
   select(dow, date, transect, abundance, common_name, scientific_name, growth_form)
