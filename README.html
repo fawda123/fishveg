@@ -116,10 +116,14 @@ $(document).ready(function () {
 <h4>Files</h4>
 <p>All data created in <code>R\dat_proc.R</code>. Source data in the ignore folder were created elsewhere (carpveg proj).</p>
 <ul>
+<li><p><code>fish_all.RData</code> Carp and bullhead data for all trapnet/gillnet data from DNR fisheries. Bullhead are yellow and blac bullheads. Data are only for July, August, September.</p></li>
 <li><p><code>fish_dat.RData</code> DNR fisheries data, all dates, processed to show CPUE of each species using Przemek’s methods</p></li>
 <li><p><code>fishveg_dat.RData</code> combined fisheries and veg data, veg data summarized by total rich and subm rich for each lake. Fish and veg data combined to be +/- one year of each other.</p></li>
-<li><p><code>veg_dat.RData</code> DNR veg transect data from 1992 to present, excluding 2004 and 2005. Combo of NRRI veg data and data from carpveg project. Format is dow, date, transect, species, and abundance category. NRRI data were from a database in ignore folder and is a combo of the tables <code>COMBOvegefile52_LUMP2</code> and <code>VEGECODE_final5_fixed</code>, both saved as RData objects in the ignore folder.</p></li>
+<li><p><code>veg_dat.RData</code> DNR veg transect data from 1992 to present. Format is dow, date, transect, species, and abundance category. NULL abundance entries are removed.</p></li>
 </ul>
+</div>
+<div id="eda" class="section level4">
+<h4>EDA</h4>
 </div>
 
 

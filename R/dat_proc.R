@@ -2,6 +2,7 @@
 # processing and combining fish/veg data
 
 library(reshape2)
+library(plyr)
 library(dplyr)
 library(tidyr)
 library(purrr)
@@ -69,65 +70,103 @@ library(foreign)
 #   rm(list = nm)
 #   
 # }
+# 
+# # create a master file of carp, bullhead only survey data
+# 
+# # files to import and names
+# fls <- list.files('ignore', '^fish_.*\\.RData$', full.names = TRUE)
+# nms <- basename(fls) %>% 
+#   gsub('\\.RData', '', .)
+# 
+# # empty list for output
+# fish_ls <- vector('list', length = length(nms))
+# names(fish_ls) <- nms
+# 
+# # columns to keep
+# cols <- c('DOW_NBR_PRIMARY', 'SURVEY_DATE', 'SURVEY_DATE_MONTH_NAME_DV', 'SURVEY_COMPONENT_CLASS_NAME', 'SAMP_STA_TYPE_TOTAL_SETS_DV', 'FISH_SPECIES_ABBREV', 'TOTAL_LENGTH_MM')
+# 
+# # surveys to keep
+# srv <- c('Gill Netting', 'Trap Netting')
+# 
+# # months to keep
+# mos <- c('July', 'August', 'September')
+# 
+# # species to keep
+# spp <- c('CAP', 'BLB', 'YEB')
+# 
+# # iterate through files
+# # import, format, append to output
+# for(fl in seq_along(fls)){
+#     
+#   cat(fl, 'of', length(fls), '\n')
+#   
+#   # import the file
+#   load(file = fls[fl])
+#   dat <- get(nms[fl])
+# 
+#   # filter for above
+#   dat <- dat[, cols] %>% 
+#     filter(
+#       SURVEY_COMPONENT_CLASS_NAME %in% srv &
+#       SURVEY_DATE_MONTH_NAME_DV %in% mos &
+#       FISH_SPECIES_ABBREV %in% spp
+#     ) %>% 
+#     mutate(
+#       TOTAL_LENGTH_MM = as.numeric(TOTAL_LENGTH_MM)
+#       ) %>% 
+#     rename(
+#       dow = DOW_NBR_PRIMARY, 
+#       date = SURVEY_DATE, 
+#       type = SURVEY_COMPONENT_CLASS_NAME, 
+#       effort = SAMP_STA_TYPE_TOTAL_SETS_DV, 
+#       sp_abb = FISH_SPECIES_ABBREV, 
+#       tl_mm = TOTAL_LENGTH_MM
+#     )
+#   
+#   # add to list
+#   fish_ls[[nms[fl]]] <- dat
+#   
+# }
+# 
+# # combine, addl processing
+# fish_all <- do.call('rbind', fish_ls) %>% 
+#   select(-SURVEY_DATE_MONTH_NAME_DV) %>% 
+#   mutate(
+#     date = as.Date(date, '%m/%d/%Y'),
+#     dow = as.numeric(paste0(dow, '00')), 
+#     type = gsub('[[:space:]]Netting$', '', type), 
+#     type = factor(type, levels = c('Gill', 'Trap'), labels = c('GN', 'TN')), 
+#     sp_abb = gsub('BLB|YEB', 'BHD', sp_abb)
+#     )
+# 
+# save(fish_all, file = 'data/fish_all.RData', compress = 'xz')
+# 
 
-# files to import and names
-fls <- list.files('ignore', '^fish_.*\\.RData$', full.names = TRUE)
-nms <- basename(fls) %>% 
-  gsub('\\.RData', '', .)
+##
+# get cpue of carp, bullhead for YOY and adults, for easy change of tl that defines YOY/adults
+rm(list = ls())
 
-# empty list for output
-fish_ls <- vector('list', length = length(nms))
-names(fish_ls) <- nms
+data(fish_all)
 
-# columns to keep
-cols <- c('REGION_NAME', 'LAKE_CLASS_ID_PRIMARY', 'DOW_NBR_PRIMARY', 'LAKE_AREA_GIS_ACRES', 'MAX_DEPTH_FEET', 'MEAN_DEPTH_FEET', 'SURVEY_DATE', 'SURVEY_DATE_MONTH_NAME_DV', 'SURVEY_DATE_CALENDAR_YEAR_DV', 'SURVEY_COMPONENT_CLASS_NAME', 'SAMP_STA_TYPE_TOTAL_SETS_DV', 'FISH_SPECIES_ABBREV', 'TOTAL_LENGTH_MM')
+bhd_yoy <- 100
+cap_yoy <- 150
 
-# surveys to keep
-srv <- c('Gill Netting', 'Trap Netting')
+dat <- fish_all
+dat$age <- 'YOY'
 
-# months to keep
-mos <- c('July', 'August', 'September')
+# create length classes
+dat$age[dat$sp_abb == 'CAP' & dat$tl_mm >= cap_yoy] <- 'adult'
+dat$age[dat$sp_abb == 'BHD' & dat$tl_mm >= bhd_yoy] <- 'adult'
 
-# species to keep
-spp <- c('CAP', 'BLG', 'BLC', 'WHC', 'GSF', 'BLB', 'YEB', 'YEP', 'NOP', 'LMB', 'WAE')
 
-# iterate through files
-# import, format, append to output
-for(fl in seq_along(fls)){
-    
-  cat(fl, 'of', length(fls), '\n')
-  
-  # import the file
-  load(file = fls[fl])
-  dat <- get(nms[fl])
 
-  # filter for above
-  dat <- dat[, cols] %>% 
-    filter(
-      SURVEY_COMPONENT_CLASS_NAME %in% srv &
-      SURVEY_DATE_MONTH_NAME_DV %in% mos &
-      FISH_SPECIES_ABBREV %in% spp
-    ) %>% 
-    mutate(
-      TOTAL_LENGTH_MM = as.numeric(TOTAL_LENGTH_MM),
-      Species = NA
-      ) 
-  
-  # create length classes
-  dat$Species[dat$FISH_SPECIES_ABBREV=="CAP" & dat$SURVEY_COMPONENT_CLASS_NAME=="Gill Netting"& dat$TOTAL_LENGTH_MM>300]<-"COC_300_GN"
-  dat$Species[dat$FISH_SPECIES_ABBREV=="CAP" & dat$SURVEY_COMPONENT_CLASS_NAME=="Trap Netting"& dat$TOTAL_LENGTH_MM>300]<-"COC_300_TN"
-  dat$Species[dat$FISH_SPECIES_ABBREV=="CAP" & dat$TOTAL_LENGTH_MM<150& dat$SURVEY_COMPONENT_CLASS_NAME=="Trap Netting"]<-"COC_150_TN"
-  dat$Species[dat$FISH_SPECIES_ABBREV=="CAP" & dat$TOTAL_LENGTH_MM>=150 & dat$TOTAL_LENGTH_MM<=300& dat$SURVEY_COMPONENT_CLASS_NAME=="Gill Netting"]<-"COC_150_300_GN"
-  dat$Species[dat$FISH_SPECIES_ABBREV=="CAP" & dat$TOTAL_LENGTH_MM>=150 & dat$TOTAL_LENGTH_MM<=300& dat$SURVEY_COMPONENT_CLASS_NAME=="Trap Netting"]<-"COC_150_300_TN"
-  dat$Species[dat$FISH_SPECIES_ABBREV=="BLG"& dat$SURVEY_COMPONENT_CLASS_NAME=="Trap Netting"]<-"BLG"
-  dat$Species[dat$FISH_SPECIES_ABBREV%in% c("BLC","WHC")& dat$SURVEY_COMPONENT_CLASS_NAME=="Trap Netting"]<-"CRP"
-  dat$Species[dat$FISH_SPECIES_ABBREV%in% c("BLB","YEB") & dat$TOTAL_LENGTH_MM>100& dat$SURVEY_COMPONENT_CLASS_NAME=="Trap Netting"]<-"BHD_adult"
-  dat$Species[dat$FISH_SPECIES_ABBREV%in% c("BLB","YEB") & dat$TOTAL_LENGTH_MM<=100& dat$SURVEY_COMPONENT_CLASS_NAME=="Trap Netting"]<-"BHD_YOY"
-  dat$Species[dat$FISH_SPECIES_ABBREV=="YEP"& dat$SURVEY_COMPONENT_CLASS_NAME=="Gill Netting"]<-"YEP"
-  dat$Species[dat$FISH_SPECIES_ABBREV=="NOP"& dat$SURVEY_COMPONENT_CLASS_NAME=="Gill Netting"]<-"NOP"
-  dat$Species[dat$FISH_SPECIES_ABBREV=="WAE"& dat$SURVEY_COMPONENT_CLASS_NAME=="Gill Netting"]<-"WAE"
-  dat$Species[dat$FISH_SPECIES_ABBREV=="LMB"& dat$SURVEY_COMPONENT_CLASS_NAME=="Gill Netting"]<-"LMB"
-  
+
+
+
+
+
+
+
   dat <- melt(dat,
     id.var=c("REGION_NAME","LAKE_CLASS_ID_PRIMARY","DOW_NBR_PRIMARY","LAKE_AREA_GIS_ACRES",   
     "MAX_DEPTH_FEET","MEAN_DEPTH_FEET","SURVEY_DATE","SURVEY_DATE_MONTH_NAME_DV","SURVEY_DATE_CALENDAR_YEAR_DV",
@@ -146,7 +185,7 @@ for(fl in seq_along(fls)){
     "SURVEY_COMPONENT_CLASS_NAME","SAMP_STA_TYPE_TOTAL_SETS_DV","Species"),
     measure.var="CPUE",variable.name="CPUE")
   
-  dat$value[is.na(dat$value)]<-0  # replacew the NAs with 0s 
+  dat$value[is.na(dat$value)] <- 0  # replacew the NAs with 0s 
   
   dat <- dcast(dat, SURVEY_DATE_CALENDAR_YEAR_DV+SURVEY_DATE+SURVEY_DATE_MONTH_NAME_DV+REGION_NAME+LAKE_CLASS_ID_PRIMARY+
     DOW_NBR_PRIMARY+MAX_DEPTH_FEET+LAKE_AREA_GIS_ACRES~CPUE+Species,sum)
@@ -157,6 +196,9 @@ for(fl in seq_along(fls)){
   fish_ls[[nms[fl]]] <- dat
   
 }
+
+
+
 
 # data from Pre-1993 did not have bull head YOY, CPUE_BHD_YOY
 
