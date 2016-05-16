@@ -146,92 +146,12 @@ library(foreign)
 # get cpue of carp, bullhead for YOY and adults, for easy change of tl that defines YOY/adults
 rm(list = ls())
 
+source('R/funcs.R')
+
 data(fish_all)
+fish_dat <- cpue_fun(fish_all, bhd_yoy = 0, cap_yoy = 0)
 
-bhd_yoy <- 100
-cap_yoy <- 150
-
-dat <- fish_all
-dat$age <- 'YOY'
-
-# create length classes
-dat$age[dat$sp_abb == 'CAP' & dat$tl_mm >= cap_yoy] <- 'adult'
-dat$age[dat$sp_abb == 'BHD' & dat$tl_mm >= bhd_yoy] <- 'adult'
-
-
-
-
-
-
-
-
-
-
-  dat <- melt(dat,
-    id.var=c("REGION_NAME","LAKE_CLASS_ID_PRIMARY","DOW_NBR_PRIMARY","LAKE_AREA_GIS_ACRES",   
-    "MAX_DEPTH_FEET","MEAN_DEPTH_FEET","SURVEY_DATE","SURVEY_DATE_MONTH_NAME_DV","SURVEY_DATE_CALENDAR_YEAR_DV",
-    "SURVEY_COMPONENT_CLASS_NAME","SAMP_STA_TYPE_TOTAL_SETS_DV","Species"),
-    measure.var="TOTAL_LENGTH_MM",value.name="TOTAL_LENGTH_MM")
-  
-  dat <- ddply(dat,c("REGION_NAME","LAKE_CLASS_ID_PRIMARY","DOW_NBR_PRIMARY","LAKE_AREA_GIS_ACRES",   
-    "MAX_DEPTH_FEET","MEAN_DEPTH_FEET","SURVEY_DATE","SURVEY_DATE_MONTH_NAME_DV","SURVEY_DATE_CALENDAR_YEAR_DV",
-    "SURVEY_COMPONENT_CLASS_NAME","SAMP_STA_TYPE_TOTAL_SETS_DV","Species"), summarize,
-    N=length(TOTAL_LENGTH_MM))
-  dat$CPUE <- dat$N/as.numeric(dat$SAMP_STA_TYPE_TOTAL_SETS_DV)
-  
-  dat <- melt(dat,
-    id.var=c("REGION_NAME","LAKE_CLASS_ID_PRIMARY","DOW_NBR_PRIMARY","LAKE_AREA_GIS_ACRES",   
-    "MAX_DEPTH_FEET","MEAN_DEPTH_FEET","SURVEY_DATE","SURVEY_DATE_MONTH_NAME_DV","SURVEY_DATE_CALENDAR_YEAR_DV",
-    "SURVEY_COMPONENT_CLASS_NAME","SAMP_STA_TYPE_TOTAL_SETS_DV","Species"),
-    measure.var="CPUE",variable.name="CPUE")
-  
-  dat$value[is.na(dat$value)] <- 0  # replacew the NAs with 0s 
-  
-  dat <- dcast(dat, SURVEY_DATE_CALENDAR_YEAR_DV+SURVEY_DATE+SURVEY_DATE_MONTH_NAME_DV+REGION_NAME+LAKE_CLASS_ID_PRIMARY+
-    DOW_NBR_PRIMARY+MAX_DEPTH_FEET+LAKE_AREA_GIS_ACRES~CPUE+Species,sum)
-  
-  dat$CPUE_NOP <- NULL
-
-  # add to list
-  fish_ls[[nms[fl]]] <- dat
-  
-}
-
-
-
-
-# data from Pre-1993 did not have bull head YOY, CPUE_BHD_YOY
-
-######
-# combining the list
-# addl formatting
-fish_all <- do.call('rbind', fish_ls)
-row.names(fish_all) <- 1:nrow(fish_all)
-fish_all <- rename(fish_all, 
-  year = SURVEY_DATE_CALENDAR_YEAR_DV,
-  date = SURVEY_DATE,
-  month =SURVEY_DATE_MONTH_NAME_DV,
-  region = REGION_NAME,
-  class = LAKE_CLASS_ID_PRIMARY,
-  dow = DOW_NBR_PRIMARY,
-  maxd_ft = MAX_DEPTH_FEET,
-  area_ac =LAKE_AREA_GIS_ACRES
-)
-names(fish_all) <- tolower(names(fish_all))
-fish_all <- mutate(fish_all, 
-  date = as.Date(date, format = '%m/%d/%Y'), 
-  month = as.character(month), 
-  region = as.character(region), 
-  dow = paste0(dow, '000'),
-  dow = substr(dow, 1, 8)
-  ) %>% 
-  arrange(date, dow)
-
-fish_dat <- fish_all
-fish_dat[order(fish_dat$date), ] <- fish_dat
 save(fish_dat, file = 'data/fish_dat.RData', compress = 'xz')
-
-write.csv(fish_dat, file = 'ignore/fish_dat.csv', quote = F, row.names = F)
 
 ######
 # veg transect data
