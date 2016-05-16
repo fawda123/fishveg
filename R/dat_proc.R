@@ -149,7 +149,7 @@ rm(list = ls())
 source('R/funcs.R')
 
 data(fish_all)
-fish_dat <- cpue_fun(fish_all, bhd_yoy = 0, cap_yoy = 0)
+fish_dat <- cpue_fun(fish_all, bhd_yoy = 100, cap_yoy = 150)
 
 save(fish_dat, file = 'data/fish_dat.RData', compress = 'xz')
 
@@ -315,13 +315,14 @@ veg_summ <- select(veg_dat, dow, date, common_name, growth_form) %>%
   )
 
 # merge with fish data, each row is a unique lake
-fishveg_dat <- inner_join(fish_dat, veg_summ, by = 'dow') %>% 
+fishveg_dat <- mutate(fish_dat, dow = as.character(dow)) %>%  
+  inner_join(., veg_summ, by = 'dow') %>% 
   mutate(diff_dt = abs(date - veg_date)) %>% 
   filter(diff_dt < 365) %>% 
   group_by(dow) %>% 
   filter(diff_dt == min(diff_dt)[1]) %>% 
   arrange(dow) %>% 
-  select(-diff_dt, -year, -month) %>% 
+  select(-diff_dt) %>% 
   rename(fish_date = date)
 
 # organize covariate data, merge with fishveg_dat
@@ -337,8 +338,7 @@ covdat <- select(covdat, DOWLKNUM, depthft, LKACRES, shedaream2, SDI, PDEVL, PAG
   select(-depthft, -LKACRES, -PDEVL, -PAG, -SDI, -secchi, -DOWLKNUM)
 
 # combine fishveg_dat with covariates
-fishveg_dat <- select(fishveg_dat, -maxd_ft, -area_ac) %>% 
-  ungroup %>% 
+fishveg_dat <- ungroup(fishveg_dat) %>% 
   mutate(dow = as.numeric(dow)) %>% 
   left_join(., covdat, by = 'dow') %>% 
   na.omit
