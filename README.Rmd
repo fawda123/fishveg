@@ -3,43 +3,147 @@ title: "README"
 output: html_document
 ---
 
-```{r echo = F, message = F}
-library(dplyr)
+```{r echo = F, message = F, warning = F}
 library(tidyr)
 library(ggplot2)
+library(purrr)
+library(dplyr)
+library(stargazer)
 source('R/funcs.R')
 ```
-
 
 #### Files
 
 All data created in `R\dat_proc.R`.  Source data in the ignore folder were created elsewhere (carpveg proj).
 
-* `fish_all.RData` DNR trapnet/gillnet fish data, one unique record per fish.  Only Carp and bullhead species are identified, all other species labelled as 'other'. Data are only for July, August, September.  Includes true zeroes. 
+* `fish_all.RData` DNR trapnet/gillnet fish data for all years, one unique record per fish.  Only Carp and bullhead species are identified, all other species labelled as 'other'. Data are only for July, August, September.  Includes true zeroes. 
 
-* `fish_dat.RData` Same as `fish_all.RData` but data are converted to CPUE.  CPUE estimated as number of fish divided by effort, unique to species, date, lake etc.  CPUE was esimated separately for trapnet, gillnet, then both were summed. 
+* `fish_dat.RData` Same as `fish_all.RData` but data are converted to CPUE.  CPUE estimated as number of fish divided by effort, unique to species, date, lake, and gear type.  CPUE was esimated separately for trapnet, gillnet, then both were summed. 
 
 * `fishveg_dat.RData` combined fisheries and veg data, veg data summarized by total rich and subm rich for each lake.  Fish and veg data combined to be +/- one year of each other.  
 
 * `veg_dat.RData` DNR veg transect data from 1992 to present. Format is dow, date, transect, species, and abundance category.  NULL abundance entries are not removed, these are species in the survey but not observed on a transect.  Note that there were no lakes in the dataset that had zero veg.  
 
-#### EDA
+#### Exploratory analysis
 
-```{r}
+```{r fig.height = 7, fig.width = 10, echo = F, fig.cap = 'Lake counts in DNR fisheries database with presence/absence of adult bullhead (BHD) and adult carp (CAP).'}
 
 data(fishveg_dat)
 
-# cpue histograms
+# categorize lakes by benthivore p/a
+# summarize veg rich by categories
+toplo <- dplyr::select(fishveg_dat, BHD_adult, CAP_adult, veg_rich, S_rich) %>% 
+  mutate(
+    BHD_adulttmp = as.character(1 * (BHD_adult > 0)),
+    CAP_adulttmp = as.character(1 * (CAP_adult > 0))
+  ) %>% 
+  unite(fish_cat, BHD_adulttmp, CAP_adulttmp) %>% 
+  mutate(fish_cat = factor(fish_cat, 
+    levels = c('1_1', '1_0', '0_1', '0_0'),
+    labels = c('BHD_CAP', 'BHD_only', 'CAP_only', 'none')
+    )) %>% 
+  group_by(fish_cat) %>% 
+  summarize(count = length(fish_cat))
 
-toplo <- select(fishveg_dat, matches('^BHD|^CAP')) %>% 
-  gather %>% 
-  filter(value > 0)
- 
-ggplot(toplo, aes(x = key)) + 
-  geom_bar() + 
-  facet_wrap(~key) + 
-  theme_bw() +
-  scale_x_continuous(limits = c(-10, 200))
+p <- ggplot(toplo, aes(x = fish_cat, y = count)) + 
+  geom_bar(stat = 'identity') +
+  theme_minimal() + 
+  theme(
+    axis.line.x = element_line(),
+    axis.line.y = element_line(), 
+    axis.title.x = element_blank(), 
+    legend.title = element_blank()
+    ) +
+  scale_y_continuous('Number of lakes')
+print(p)  
+```
+
+```{r fig.height = 7, fig.width = 10, echo = F, fig.cap = 'Mean vegetation richness for lakes categorized by presence/absence of adult bullhead (BHD) and adult carp (CAP).  Vegetation richness is summarized for all and submersed species.  95% confidence intervals for each category are also shown.'}
+
+data(fishveg_dat)
+
+# categorize lakes by benthivore p/a
+# summarize veg rich by categories
+toplo <- dplyr::select(fishveg_dat, BHD_adult, CAP_adult, veg_rich, S_rich) %>% 
+  mutate(
+    BHD_adulttmp = as.character(1 * (BHD_adult > 0)),
+    CAP_adulttmp = as.character(1 * (CAP_adult > 0))
+  ) %>% 
+  unite(fish_cat, BHD_adulttmp, CAP_adulttmp) %>% 
+  mutate(fish_cat = factor(fish_cat, 
+    levels = c('1_1', '1_0', '0_1', '0_0'),
+    labels = c('BHD_CAP', 'BHD_only', 'CAP_only', 'none')
+    )) %>% 
+  gather('rich', 'count', veg_rich:S_rich) %>%  
+  group_by(fish_cat, rich) %>% 
+  nest %>% 
+  mutate(
+    grp_ests = map(data, function(x){
+      
+      summs <- t.test(x$count)
+      meanest <- summs$estimate
+      confest <- summs$conf.int
+      data.frame(meanest, confest[1], confest[2])
+      
+    })) %>% 
+  dplyr::select(-data) %>% 
+  unnest
+
+p <- ggplot(toplo, aes(x = fish_cat, group = rich, y = meanest, fill = rich)) + 
+  geom_bar(stat = 'identity', position = 'dodge') +
+  geom_errorbar(aes(ymin = confest.1., ymax = confest.2.), position = 'dodge') +
+  theme_minimal() + 
+  theme(
+    axis.line.x = element_line(),
+    axis.line.y = element_line(), 
+    axis.title.x = element_blank(), 
+    legend.title = element_blank(), 
+    legend.position = 'top'
+    ) +
+  scale_y_continuous('Vegetation richness')
+print(p)  
+```
+
+```{r echo = F, results = 'asis'}
+
+data(fishveg_dat)
+
+# categorize lakes by benthivore p/a
+# summarize veg rich by categories
+toeval <- dplyr::select(fishveg_dat, BHD_adult, CAP_adult, veg_rich, S_rich) %>% 
+  mutate(
+    BHD_adult = factor(as.character(1 * (BHD_adult > 0))),
+    CAP_adult = factor(as.character(1 * (CAP_adult > 0)))
+  )
+
+mod1 <- lm(log(1 + veg_rich) ~ BHD_adult * CAP_adult, data = toeval)
+mod2 <- lm(log(1 + S_rich) ~ BHD_adult * CAP_adult, data = toeval)
+
+stargazer(mod1, mod2, 
+  title = 'Categorical regression of vegetation richness for lakes with and without benthivorous fish.  The first model is total vegetation richness and the second is submersed vegetation richness. Model intercepts are lakes with neither adult carp (CAP) nor adult bullhead (BHD).', 
+  dep.var.labels = c('Total', 'Submersed'),
+  single.row = T,
+  type = 'html')
+
 
 ```
 
+
+```{r echo = F, results = 'asis'}
+
+data(fishveg_dat)
+
+# categorize lakes by benthivore p/a
+# summarize veg rich by categories
+toeval <- dplyr::select(fishveg_dat, BHD_adult, CAP_adult, veg_rich, S_rich) 
+
+mod1 <- lm(log(1 + veg_rich) ~ BHD_adult * CAP_adult, data = toeval)
+mod2 <- lm(log(1 + S_rich) ~ BHD_adult * CAP_adult, data = toeval)
+
+stargazer(mod1, mod2, 
+  title = 'Linear regression of vegetation richness versus adult bullhead and carp CPUE.  The first model is total vegetation richness and the second is submersed vegetation richness.', 
+  dep.var.labels = c('Total', 'Submersed'),
+  single.row = T,
+  type = 'html')
+
+```
