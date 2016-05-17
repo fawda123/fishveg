@@ -10,11 +10,11 @@ cpue_fun <- function(dat_in, bhd_yoy = 100, cap_yoy = 150){
   library(dplyr)
   
   dat <- dat_in
-  dat$age <- 'YOY'
+  dat$age <- 'adult'
   
   # create length classes
-  dat$age[dat$sp_abb == 'CAP' & dat$tl_mm >= cap_yoy] <- 'adult'
-  dat$age[dat$sp_abb == 'BHD' & dat$tl_mm >= bhd_yoy] <- 'adult'
+  dat$age[dat$sp_abb == 'CAP' & dat$tl_mm < cap_yoy] <- 'yoy'
+  dat$age[dat$sp_abb == 'BHD' & dat$tl_mm < bhd_yoy] <- 'yoy'
   
   # summarize by cpue
   dat <- group_by(dat, dow, date, type, sp_abb, age, effort) %>% 
@@ -28,6 +28,8 @@ cpue_fun <- function(dat_in, bhd_yoy = 100, cap_yoy = 150){
     ungroup %>% 
     unite(var, sp_abb, age, sep = '_') %>% 
     spread(var, cpue, fill = 0)
+  
+  names(dat)[names(dat) %in% 'other_adult'] <- 'other'
   
   return(dat)
     

@@ -8,6 +8,7 @@ library(tidyr)
 library(purrr)
 library(readxl)
 library(foreign)
+source('R/funcs.R')
 
 ######
 # DNR fish data, in the format of CPUE all species
@@ -71,76 +72,86 @@ library(foreign)
 #   
 # }
 # 
-# # create a master file of carp, bullhead only survey data
-# 
-# # files to import and names
-# fls <- list.files('ignore', '^fish_.*\\.RData$', full.names = TRUE)
-# nms <- basename(fls) %>% 
-#   gsub('\\.RData', '', .)
-# 
-# # empty list for output
-# fish_ls <- vector('list', length = length(nms))
-# names(fish_ls) <- nms
-# 
-# # columns to keep
-# cols <- c('DOW_NBR_PRIMARY', 'SURVEY_DATE', 'SURVEY_DATE_MONTH_NAME_DV', 'SURVEY_COMPONENT_CLASS_NAME', 'SAMP_STA_TYPE_TOTAL_SETS_DV', 'FISH_SPECIES_ABBREV', 'TOTAL_LENGTH_MM')
-# 
-# # surveys to keep
-# srv <- c('Gill Netting', 'Trap Netting')
-# 
-# # months to keep
-# mos <- c('July', 'August', 'September')
-# 
-# # species to keep
-# spp <- c('CAP', 'BLB', 'YEB')
-# 
-# # iterate through files
-# # import, format, append to output
-# for(fl in seq_along(fls)){
-#     
-#   cat(fl, 'of', length(fls), '\n')
-#   
-#   # import the file
-#   load(file = fls[fl])
-#   dat <- get(nms[fl])
-# 
-#   # filter for above
-#   dat <- dat[, cols] %>% 
-#     filter(
-#       SURVEY_COMPONENT_CLASS_NAME %in% srv &
-#       SURVEY_DATE_MONTH_NAME_DV %in% mos &
-#       FISH_SPECIES_ABBREV %in% spp
-#     ) %>% 
-#     mutate(
-#       TOTAL_LENGTH_MM = as.numeric(TOTAL_LENGTH_MM)
-#       ) %>% 
-#     rename(
-#       dow = DOW_NBR_PRIMARY, 
-#       date = SURVEY_DATE, 
-#       type = SURVEY_COMPONENT_CLASS_NAME, 
-#       effort = SAMP_STA_TYPE_TOTAL_SETS_DV, 
-#       sp_abb = FISH_SPECIES_ABBREV, 
-#       tl_mm = TOTAL_LENGTH_MM
-#     )
-#   
-#   # add to list
-#   fish_ls[[nms[fl]]] <- dat
-#   
-# }
-# 
-# # combine, addl processing
-# fish_all <- do.call('rbind', fish_ls) %>% 
-#   select(-SURVEY_DATE_MONTH_NAME_DV) %>% 
-#   mutate(
-#     date = as.Date(date, '%m/%d/%Y'),
-#     dow = as.numeric(paste0(dow, '00')), 
-#     type = gsub('[[:space:]]Netting$', '', type), 
-#     type = factor(type, levels = c('Gill', 'Trap'), labels = c('GN', 'TN')), 
-#     sp_abb = gsub('BLB|YEB', 'BHD', sp_abb)
-#     )
-# 
-# save(fish_all, file = 'data/fish_all.RData', compress = 'xz')
-# 
+##
+# create a master file of carp, bullhead only survey data
+
+rm(list = ls())
+
+# files to import and names
+fls <- list.files('ignore', '^fish_.*\\.RData$', full.names = TRUE)
+nms <- basename(fls) %>% 
+  gsub('\\.RData', '', .)
+
+# empty list for output
+fish_ls <- vector('list', length = length(nms))
+names(fish_ls) <- nms
+
+# columns to keep
+cols <- c('DOW_NBR_PRIMARY', 'SURVEY_DATE', 'SURVEY_DATE_MONTH_NAME_DV', 'SURVEY_COMPONENT_CLASS_NAME', 'SAMP_STA_TYPE_TOTAL_SETS_DV', 'FISH_SPECIES_ABBREV', 'TOTAL_LENGTH_MM')
+
+# surveys to keep
+srv <- c('Gill Netting', 'Trap Netting')
+
+# months to keep
+mos <- c('July', 'August', 'September')
+
+# species to keep
+spp <- c('CAP', 'BLB', 'YEB')
+
+# iterate through files
+# import, format, append to output
+for(fl in seq_along(fls)){
+    
+  cat(fl, 'of', length(fls), '\n')
+  
+  # import the file
+  load(file = fls[fl])
+  dat <- get(nms[fl])
+
+  # other species to label as 'other'
+  # put in regex format
+  other <- unique(dat$FISH_SPECIES_ABBREV)
+  other <- other[!other %in% spp] %>% 
+    paste0('^', ., '$') %>% 
+    paste(., collapse = '|') 
+  
+  # filter for above
+  dat <- dat[, cols] %>% 
+    mutate(FISH_SPECIES_ABBREV = gsub(other, 'other', FISH_SPECIES_ABBREV)) %>% 
+    filter(
+      SURVEY_COMPONENT_CLASS_NAME %in% srv &
+      SURVEY_DATE_MONTH_NAME_DV %in% mos
+    ) %>% 
+    mutate(
+      TOTAL_LENGTH_MM = as.numeric(TOTAL_LENGTH_MM)
+      ) %>% 
+    rename(
+      dow = DOW_NBR_PRIMARY, 
+      date = SURVEY_DATE, 
+      type = SURVEY_COMPONENT_CLASS_NAME, 
+      effort = SAMP_STA_TYPE_TOTAL_SETS_DV, 
+      sp_abb = FISH_SPECIES_ABBREV, 
+      tl_mm = TOTAL_LENGTH_MM
+    )
+  
+  # add to list
+  fish_ls[[nms[fl]]] <- dat
+  
+}
+
+# combine, addl processing
+fish_all <- do.call('rbind', fish_ls) %>% 
+  select(-SURVEY_DATE_MONTH_NAME_DV) %>% 
+  mutate(
+    date = as.Date(date, '%m/%d/%Y'),
+    dow = as.numeric(paste0(dow, '00')), 
+    type = gsub('[[:space:]]Netting$', '', type), 
+    type = factor(type, levels = c('Gill', 'Trap'), labels = c('GN', 'TN')), 
+    sp_abb = gsub('BLB|YEB', 'BHD', sp_abb)
+    )
+
+save(fish_all, file = 'data/fish_all.RData', compress = 'xz')
+
 
 ##
 # get cpue of carp, bullhead for YOY and adults, for easy change of tl that defines YOY/adults
@@ -186,13 +197,12 @@ vegcodes_nrri <- select(vegcodes_nrri, NRRILUMP, COMMONNAME, SCIEN_NAME, SUB_VEG
 # format nrri data and combine with codes to get common/speices names
 nrri_tmp <- select(trans_dat_nrri, LAKENUM, NRRILUMP, END_DATE, matches('^TRSECT')) %>% 
   gather('transect', 'val', TRSECT01:TRSECT52) %>% 
-  filter(!is.na(val)) %>% 
-  filter(!val %in% 0) %>% 
+  na.omit %>% 
   mutate(
     date = as.Date(as.character(END_DATE), format = '%Y-%m-%d'),
     dow = as.numeric(LAKENUM), 
     transect = as.numeric(gsub('^TRSECT', '', transect)), 
-    abundance = factor(val, levels = c(1, 3, 5), labels = c('Rare', 'Common', 'Abundant'))
+    abundance = factor(val, levels = c(0, 1, 3, 5), labels = c('NULL', 'Rare', 'Common', 'Abundant'))
   ) %>% 
   select(dow, date, transect, NRRILUMP, abundance) %>% 
   left_join(., vegcodes_nrri, by = 'NRRILUMP') %>% 
@@ -222,14 +232,13 @@ curr_tmp <- select(trans_dat, DOW, SURVEY_ID_DATE, SAMP_STATION_NBR, ABUNDANCE_N
     common_name = COMMON_NAME, 
     scientific_name = SCIENTIFIC_NAME
   ) %>% 
-  filter(abundance != 'NULL') %>% 
   mutate(
     dow = as.numeric(dow), 
     date = as.Date(as.character(date), format = '%m/%d/%y'), 
     transect = as.numeric(transect), 
     common_name = as.character(common_name), 
     scientific_name = as.character(scientific_name), 
-    abundance = factor(abundance, levels = c('Rare', 'Common', 'Abundant'))
+    abundance = factor(abundance, levels = c('NULL', 'Rare', 'Common', 'Abundant'))
   )
 
 ###
@@ -267,13 +276,14 @@ mis_dat <- read.dbf('ignore/VEGEFIL.dbf') %>%
     transect = as.numeric(TRANSNUM) + as.numeric(transect) - 1
     ) %>% 
   select(-END_DATE, -TRANSNUM) %>% 
-  filter(!is.na(abundance) & abundance != 'N') %>% 
+  filter(!is.na(abundance) & !abundance %in% c('1', 'B')) %>% 
   mutate(
     abundance = factor(abundance, 
-      levels = c('A', 'C', 'R'), 
-      labels = c('Abundant', 'Common', 'Rare')
+      levels = c('A', 'C', 'R', 'N'), 
+      labels = c('Abundant', 'Common', 'Rare', 'NULL')
     )) %>% 
   filter(date >= as.Date('2004-01-01') & date <= as.Date('2005-12-31')) %>% 
+  mutate(VEG_CODE = as.character(VEG_CODE)) %>% 
   left_join(., vegcod, by = 'VEG_CODE') %>% 
   select(dow, date, transect, abundance, common_name, scientific_name, growth_form)
 
@@ -287,6 +297,7 @@ save(veg_dat, file = 'data/veg_dat.RData', compress = 'xz')
 ######
 # combine fish and veg data
 # veg data are summarized as total rich and total submsersed species rich
+# includes zero veg lakes
 
 rm(list = ls())
 
@@ -301,13 +312,22 @@ covdat <- read.table('ignore/MNDNRwatersheds.txt', sep = ',', header = T)
 # total rich and total subm rich
 
 # raw transect data
-veg_summ <- select(veg_dat, dow, date, common_name, growth_form) %>% 
-  unique %>% 
+veg_summ <- select(veg_dat, dow, date, abundance, common_name, growth_form) %>% 
   group_by(dow, date) %>% 
-  summarise(
-    veg_rich = length(common_name),
-    S_rich = sum(growth_form == 'S', na.rm = T)
-    ) %>%
+  nest %>% 
+  mutate(
+    richests = map(data, function(x){
+      
+      x <- select(x, -abundance) %>% 
+        unique
+      veg_rich <- length(x$common_name)
+      S_rich <- sum(x$growth_form == 'S', na.rm = T)
+
+      data.frame(veg_rich, S_rich)
+            
+    })) %>% 
+  select(-data) %>% 
+  unnest %>%
   rename(veg_date = date) %>% 
   ungroup(.) %>% 
   mutate(
