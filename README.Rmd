@@ -104,6 +104,38 @@ p <- ggplot(toplo, aes(x = fish_cat, group = rich, y = meanest, fill = rich)) +
 print(p)  
 ```
 
+
+```{r eval = F, echo = F}
+# scatterplots of richness vs CPUE
+# categorize lakes by benthivore p/a
+# summarize veg rich by categories
+toeval <- dplyr::select(fishveg_dat, BHD_adult, CAP_adult, veg_rich, S_rich) %>% 
+  mutate(
+    BHD_adultcat = factor(as.character(1 * (BHD_adult > 0))),
+    CAP_adultcat = factor(as.character(1 * (CAP_adult > 0)))
+  )
+
+toplo <- dplyr::select(fishveg_dat, BHD_adult, CAP_adult, veg_rich, S_rich) %>% 
+  mutate(
+    BHD_adulttmp = as.character(1 * (BHD_adult > 0)),
+    CAP_adulttmp = as.character(1 * (CAP_adult > 0))
+  ) %>% 
+  unite(fish_cat, BHD_adulttmp, CAP_adulttmp) %>% 
+  mutate(fish_cat = factor(fish_cat, 
+    levels = c('1_1', '1_0', '0_1', '0_0'),
+    labels = c('BHD_CAP', 'BHD_only', 'CAP_only', 'none')
+    )) %>% 
+  gather('rich', 'count', veg_rich:S_rich) %>% 
+  gather('fish', 'CPUE', BHD_adult:CAP_adult)
+
+ggplot(toplo, aes(x = log(1 + CPUE), y = log(1 + count), colour = fish_cat, group = fish_cat)) +
+  geom_point() + 
+  stat_smooth(method = 'lm') + 
+  facet_wrap(fish ~ rich) + 
+  theme_minimal() + 
+  theme(axis.line.x = element_line(), axis.line.y = element_line())
+```
+
 ```{r echo = F, results = 'asis'}
 
 data(fishveg_dat)
@@ -128,7 +160,6 @@ stargazer(mod1, mod2,
 
 ```
 
-
 ```{r echo = F, results = 'asis'}
 
 data(fishveg_dat)
@@ -137,8 +168,8 @@ data(fishveg_dat)
 # summarize veg rich by categories
 toeval <- dplyr::select(fishveg_dat, BHD_adult, CAP_adult, veg_rich, S_rich) 
 
-mod1 <- lm(log(1 + veg_rich) ~ BHD_adult * CAP_adult, data = toeval)
-mod2 <- lm(log(1 + S_rich) ~ BHD_adult * CAP_adult, data = toeval)
+mod1 <- lm(log(1 + veg_rich) ~ log(1 + BHD_adult) * log(1 + CAP_adult), data = toeval)
+mod2 <- lm(log(1 + S_rich) ~ log(1 + BHD_adult) * log(1 + CAP_adult), data = toeval)
 
 stargazer(mod1, mod2, 
   title = 'Linear regression of vegetation richness versus adult bullhead and carp CPUE.  The first model is total vegetation richness and the second is submersed vegetation richness.', 
