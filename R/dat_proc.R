@@ -361,7 +361,8 @@ covdat <- select(covdat, DOWLKNUM, depthft, LKACRES, shedaream2, SDI, PDEVL, PAG
 fishveg_dat <- ungroup(fishveg_dat) %>% 
   mutate(dow = as.numeric(dow)) %>% 
   left_join(., covdat, by = 'dow') %>% 
-  na.omit
+  na.omit %>% 
+  data.frame
   
 # save
 save(fishveg_dat, file = 'data/fishveg_dat.RData')
