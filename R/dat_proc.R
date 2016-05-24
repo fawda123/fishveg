@@ -8,6 +8,8 @@ library(tidyr)
 library(purrr)
 library(readxl)
 library(foreign)
+library(lubridate)
+library(maptools)
 source('R/funcs.R')
 
 ######
@@ -304,13 +306,14 @@ rm(list = ls())
 data(veg_dat)
 data(fish_dat)
 
+# ecoregion shapefile
+ecoreg <- maptools::readShapeSpatial('ignore/MN_eco_keep.shp')
+
 # covariates
 covdat <- read.table('ignore/MNDNRwatersheds.txt', sep = ',', header = T)
 
-###
 # first summarize veg transect data
 # total rich and total subm rich
-
 # raw transect data
 veg_summ <- select(veg_dat, dow, date, abundance, common_name, growth_form) %>% 
   group_by(dow, date) %>% 
@@ -331,21 +334,60 @@ veg_summ <- select(veg_dat, dow, date, abundance, common_name, growth_form) %>%
   rename(veg_date = date) %>% 
   ungroup(.) %>% 
   mutate(
-    dow = as.character(dow)
+    dow = as.character(dow), 
+    yr = year(veg_date)
+  )
+# all lake utm coordinates in MN, zone 15N
+lk_locs <- foreign::read.dbf('ignore/10k_pts.dbf') %>% 
+  select(MAIN_DOW, UTM_X, UTM_Y) %>% 
+  mutate(dow = as.character(as.numeric(as.character(MAIN_DOW)))) %>% 
+  select(-MAIN_DOW) %>% 
+  group_by(dow) %>% 
+  summarize(
+    utmx = mean(UTM_X, na.rm = TRUE),
+    utmy = mean(UTM_Y, na.rm = TRUE)
   )
 
-# merge with fish data, each row is a unique lake
-fishveg_dat <- mutate(fish_dat, dow = as.character(dow)) %>%  
-  inner_join(., veg_summ, by = 'dow') %>% 
+# merge fish data with veg data, each row is a unique lake
+# add UTM coords
+fishveg_dat <- mutate(fish_dat, 
+    dow = as.character(dow), 
+    yr = year(date)
+  ) %>%  
+  inner_join(., veg_summ, by = c('dow', 'yr')) %>% 
   mutate(diff_dt = abs(date - veg_date)) %>% 
-  filter(diff_dt < 365) %>% 
   group_by(dow) %>% 
-  filter(diff_dt == min(diff_dt)[1]) %>% 
+  filter(yr == max(yr) & diff_dt == min(diff_dt)) %>% 
   arrange(dow) %>% 
-  select(-diff_dt) %>% 
-  rename(fish_date = date)
+  select(-yr, -diff_dt) %>% 
+  rename(fish_date = date) %>% 
+  left_join(., lk_locs, by = 'dow') %>% 
+  na.omit # st. louis river estuary not a lake, no coords in database
 
-# organize covariate data, merge with fishveg_dat
+# get dnr ecoregions
+# lakes as spatialpointsdataframe for overlay
+fishveg_pts <- select(fishveg_dat, dow, utmx, utmy) %>% 
+  data.frame
+dow <- fishveg_pts$dow
+fishveg_pts <- with(fishveg_pts, cbind(utmx, utmy))
+rownames(fishveg_pts) <- dow
+fishveg_pts <- na.omit(fishveg_pts)
+fishveg_pts <- SpatialPointsDataFrame(fishveg_pts, data = data.frame(dow = rownames(fishveg_pts)))
+
+# overlay lake locations with ecore shapefile  
+ecoreg <- over(fishveg_pts, ecoreg) %>% 
+  data.frame(
+    dow = rownames(.), 
+    ecoreg = tolower(.$NA_L1NAME)
+  ) %>% 
+  select(dow, ecoreg) %>% 
+  mutate(dow = as.character(dow)) %>% 
+  na.omit
+
+# add ecoregion to fishveg_dat
+fishveg_dat <- left_join(fishveg_dat, ecoreg, by = 'dow')
+
+# organize addl covariate data
 covdat <- select(covdat, DOWLKNUM, depthft, LKACRES, shedaream2, SDI, PDEVL, PAG, secchi) %>% 
   mutate(
     depthm = depthft * 0.3048, 
