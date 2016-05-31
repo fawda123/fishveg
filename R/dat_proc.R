@@ -74,86 +74,85 @@ source('R/funcs.R')
 #   
 # }
 # 
-##
-# create a master file of carp, bullhead only survey data
-
-rm(list = ls())
-
-# files to import and names
-fls <- list.files('ignore', '^fish_.*\\.RData$', full.names = TRUE)
-nms <- basename(fls) %>% 
-  gsub('\\.RData', '', .)
-
-# empty list for output
-fish_ls <- vector('list', length = length(nms))
-names(fish_ls) <- nms
-
-# columns to keep
-cols <- c('DOW_NBR_PRIMARY', 'SURVEY_DATE', 'SURVEY_DATE_MONTH_NAME_DV', 'SURVEY_COMPONENT_CLASS_NAME', 'SAMP_STA_TYPE_TOTAL_SETS_DV', 'FISH_SPECIES_ABBREV', 'TOTAL_LENGTH_MM')
-
-# surveys to keep
-srv <- c('Gill Netting', 'Trap Netting')
-
-# months to keep
-mos <- c('July', 'August', 'September')
-
-# species to keep
-spp <- c('CAP', 'BLB', 'YEB')
-
-# iterate through files
-# import, format, append to output
-for(fl in seq_along(fls)){
-    
-  cat(fl, 'of', length(fls), '\n')
-  
-  # import the file
-  load(file = fls[fl])
-  dat <- get(nms[fl])
-
-  # other species to label as 'other'
-  # put in regex format
-  other <- unique(dat$FISH_SPECIES_ABBREV)
-  other <- other[!other %in% spp] %>% 
-    paste0('^', ., '$') %>% 
-    paste(., collapse = '|') 
-  
-  # filter for above
-  dat <- dat[, cols] %>% 
-    mutate(FISH_SPECIES_ABBREV = gsub(other, 'other', FISH_SPECIES_ABBREV)) %>% 
-    filter(
-      SURVEY_COMPONENT_CLASS_NAME %in% srv &
-      SURVEY_DATE_MONTH_NAME_DV %in% mos
-    ) %>% 
-    mutate(
-      TOTAL_LENGTH_MM = as.numeric(TOTAL_LENGTH_MM)
-      ) %>% 
-    rename(
-      dow = DOW_NBR_PRIMARY, 
-      date = SURVEY_DATE, 
-      type = SURVEY_COMPONENT_CLASS_NAME, 
-      effort = SAMP_STA_TYPE_TOTAL_SETS_DV, 
-      sp_abb = FISH_SPECIES_ABBREV, 
-      tl_mm = TOTAL_LENGTH_MM
-    )
-  
-  # add to list
-  fish_ls[[nms[fl]]] <- dat
-  
-}
-
-# combine, addl processing
-fish_all <- do.call('rbind', fish_ls) %>% 
-  select(-SURVEY_DATE_MONTH_NAME_DV) %>% 
-  mutate(
-    date = as.Date(date, '%m/%d/%Y'),
-    dow = as.numeric(paste0(dow, '00')), 
-    type = gsub('[[:space:]]Netting$', '', type), 
-    type = factor(type, levels = c('Gill', 'Trap'), labels = c('GN', 'TN')), 
-    sp_abb = gsub('BLB|YEB', 'BHD', sp_abb)
-    )
-
-save(fish_all, file = 'data/fish_all.RData', compress = 'xz')
-
+# ##
+# # create a master file of carp, bullhead only survey data
+# 
+# rm(list = ls())
+# 
+# # files to import and names
+# fls <- list.files('ignore', '^fish_.*\\.RData$', full.names = TRUE)
+# nms <- basename(fls) %>% 
+#   gsub('\\.RData', '', .)
+# 
+# # empty list for output
+# fish_ls <- vector('list', length = length(nms))
+# names(fish_ls) <- nms
+# 
+# # columns to keep
+# cols <- c('DOW_NBR_PRIMARY', 'SURVEY_DATE', 'SURVEY_DATE_MONTH_NAME_DV', 'SURVEY_COMPONENT_CLASS_NAME', 'SAMP_STA_TYPE_TOTAL_SETS_DV', 'FISH_SPECIES_ABBREV', 'TOTAL_LENGTH_MM')
+# 
+# # surveys to keep
+# srv <- c('Gill Netting', 'Trap Netting')
+# 
+# # months to keep
+# mos <- c('July', 'August', 'September')
+# 
+# # species to keep
+# spp <- c('CAP', 'BLB', 'YEB')
+# 
+# # iterate through files
+# # import, format, append to output
+# for(fl in seq_along(fls)){
+#     
+#   cat(fl, 'of', length(fls), '\n')
+#   
+#   # import the file
+#   load(file = fls[fl])
+#   dat <- get(nms[fl])
+# 
+#   # other species to label as 'other'
+#   # put in regex format
+#   other <- unique(dat$FISH_SPECIES_ABBREV)
+#   other <- other[!other %in% spp] %>% 
+#     paste0('^', ., '$') %>% 
+#     paste(., collapse = '|') 
+#   
+#   # filter for above
+#   dat <- dat[, cols] %>% 
+#     mutate(FISH_SPECIES_ABBREV = gsub(other, 'other', FISH_SPECIES_ABBREV)) %>% 
+#     filter(
+#       SURVEY_COMPONENT_CLASS_NAME %in% srv &
+#       SURVEY_DATE_MONTH_NAME_DV %in% mos
+#     ) %>% 
+#     mutate(
+#       TOTAL_LENGTH_MM = as.numeric(TOTAL_LENGTH_MM)
+#       ) %>% 
+#     rename(
+#       dow = DOW_NBR_PRIMARY, 
+#       date = SURVEY_DATE, 
+#       type = SURVEY_COMPONENT_CLASS_NAME, 
+#       effort = SAMP_STA_TYPE_TOTAL_SETS_DV, 
+#       sp_abb = FISH_SPECIES_ABBREV, 
+#       tl_mm = TOTAL_LENGTH_MM
+#     )
+#   
+#   # add to list
+#   fish_ls[[nms[fl]]] <- dat
+#   
+# }
+# 
+# # combine, addl processing
+# fish_all <- do.call('rbind', fish_ls) %>% 
+#   select(-SURVEY_DATE_MONTH_NAME_DV) %>% 
+#   mutate(
+#     date = as.Date(date, '%m/%d/%Y'),
+#     dow = as.numeric(paste0(dow, '00')), 
+#     type = gsub('[[:space:]]Netting$', '', type), 
+#     type = factor(type, levels = c('Gill', 'Trap'), labels = c('GN', 'TN')), 
+#     sp_abb = gsub('BLB|YEB', 'BHD', sp_abb)
+#     )
+# 
+# save(fish_all, file = 'data/fish_all.RData', compress = 'xz')
 
 ##
 # get cpue of carp, bullhead for YOY and adults, for easy change of tl that defines YOY/adults
@@ -162,7 +161,7 @@ rm(list = ls())
 source('R/funcs.R')
 
 data(fish_all)
-fish_dat <- cpue_fun(fish_all, bhd_yoy = 100, cap_yoy = 150)
+fish_dat <- cpue_fun(fish_all, bhd_yoy = 100, cap_yoy = 150, bywt = TRUE)
 
 save(fish_dat, file = 'data/fish_dat.RData', compress = 'xz')
 

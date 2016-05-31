@@ -14,19 +14,77 @@ source('R/funcs.R')
 
 #### Files
 
-All data created in `R\dat_proc.R`.  Source data in the ignore folder were created elsewhere (carpveg proj).
+All data created in `R\dat_proc.R`.  Source data in the ignore folder were created elsewhere.
 
-* `fish_all.RData` DNR trapnet/gillnet fish data for all years, one unique record per fish.  Only Carp and bullhead species are identified, all other species labelled as 'other'. Data are only for July, August, September.  Includes true zeroes. 
+* `fish_all.RData` DNR trapnet/gillnet fish data for all years, one unique record per fish.  Only Carp and bullhead species are identified, all other species labelled as 'other'. Total fish length is reported in mm. Data are only for July, August, September.  Includes true zeroes. 
 
-* `fish_dat.RData` Same as `fish_all.RData` but data are converted to CPUE.  CPUE estimated as number of fish divided by effort, unique to species, date, lake, and gear type.  CPUE was esimated separately for trapnet, gillnet, then both were summed. 
+* `fish_dat.RData` Same as `fish_all.RData` but data are converted to CPUE.  CPUE estimated as total fish weight divided by effort, unique to species, date, lake, and gear type.  CPUE was esimated separately for trapnet, gillnet, then both were summed.  Length to weight equations were from the Handbook of Freshwater Fishery Biology.
 
-* `fishveg_dat.RData` combined fisheries and veg data, veg data summarized by total rich and subm rich for each lake.  Fish and veg data combined to be +/- one year of each other.  
+For carp, weight in kg from length in mm:
+$$
+log10(weight) = -4.44245 + 2.83840 * log10(length)
+$$
+
+For bullhead (yellow and black), weight in kg from length in mm:
+$$
+log10(weight) = -4.60512 + 2.88495 * log10(length)
+$$
+
+* `fishveg_dat.RData` combined fisheries and veg data, veg data summarized by total rich and subm rich for each lake.  Fish and veg data combined if the survey was in the same year. Covariates for each lake include UTM coordinates, ecoregion, watershed area, lake depth, lake area, percent human development in watershed, SDI, and secchi depth.   
 
 * `veg_dat.RData` DNR veg transect data from 1992 to present. Format is dow, date, transect, species, and abundance category.  NULL abundance entries are not removed, these are species in the survey but not observed on a transect.  Note that there were no lakes in the dataset that had zero veg.  
 
 #### Exploratory analysis
 
-```{r fig.height = 7, fig.width = 10, echo = F, fig.cap = 'Lake counts in DNR fisheries database with presence/absence of adult bullhead (BHD) and adult carp (CAP).'}
+```{r fig.height = 6, fig.width = 12, echo = F, fig.cap = 'CPUE (kg per unit effort) of adult bullhead (> 100 mm) and carp (> 150 mm) in lakes surveyed by Minnesota DNR, 1992 to through 2012.  Lakes shown are those with a vegetation survey in the same year.', message = F, cache = T}
+library(ggplot2)
+library(maptools)
+library(gridExtra)
+
+data(fishveg_dat)
+
+ecoregs <- readShapeSpatial('ignore/MN_eco_keep.shp')
+ecoregs <- fortify(ecoregs)
+ecoregs <- ecoregs[ecoregs$id %in% c(2, 3, 4), ]
+ecoregs$Ecoregion <- factor(ecoregs$id, levels = c(2, 3, 4), 
+  labels = c("NF", "ETF", "GP"))
+
+toplo <- fishveg_dat
+
+p1 <- ggplot(ecoregs, aes(x = long, y = lat)) + 
+  geom_polygon(aes(x = long, y = lat, group = group, fill= Ecoregion), alpha = 0.5) +
+  geom_point(data = toplo, aes(x = utmx, y = utmy, size = BHD_adult), alpha = 0.8) +
+  theme_classic() + 
+  theme(axis.line=element_blank(),axis.text.x=element_blank(),
+          axis.text.y=element_blank(),axis.ticks=element_blank(),
+          axis.title.x=element_blank(),
+          axis.title.y=element_blank(),
+          panel.background=element_blank(),panel.border=element_blank(),panel.grid.major=element_blank(),
+          panel.grid.minor=element_blank(),plot.background=element_blank(), 
+          legend.box.just = 'right'
+    ) +
+  coord_equal()
+
+p2 <- ggplot(ecoregs, aes(x = long, y = lat)) + 
+  geom_polygon(aes(x = long, y = lat, group = group, fill= Ecoregion), alpha = 0.5) +
+  geom_point(data = toplo, aes(x = utmx, y = utmy, size = CAP_adult), alpha = 0.8) +
+  theme_classic() + 
+  theme(axis.line=element_blank(),axis.text.x=element_blank(),
+          axis.text.y=element_blank(),axis.ticks=element_blank(),
+          axis.title.x=element_blank(),
+          axis.title.y=element_blank(),
+          panel.background=element_blank(),panel.border=element_blank(),panel.grid.major=element_blank(),
+          panel.grid.minor=element_blank(),plot.background=element_blank(), 
+          legend.box.just = 'right'
+    ) +
+  coord_equal()
+
+grid.arrange(p1, p2, ncol = 2)
+
+```
+
+
+```{r fig.height = 7, fig.width = 10, echo = F, fig.cap = 'Lake counts in DNR fisheries database with presence/absence of adult bullhead (BHD) and adult carp (CAP).', cache = T}
 
 data(fishveg_dat)
 
@@ -56,10 +114,9 @@ p <- ggplot(toplo, aes(x = fish_cat, y = count)) +
     ) +
   scale_y_continuous('Number of lakes')
 print(p) 
-
 ```
 
-```{r fig.height = 7, fig.width = 10, echo = F, fig.cap = 'Mean vegetation richness for lakes categorized by presence/absence of adult bullhead (BHD) and adult carp (CAP).  Vegetation richness is summarized for all and submersed species.  95% confidence intervals for each category are also shown.'}
+```{r fig.height = 7, fig.width = 10, echo = F, fig.cap = 'Mean vegetation richness for lakes categorized by presence/absence of adult bullhead (BHD) and adult carp (CAP).  Vegetation richness is summarized for all and submersed species.  95% confidence intervals for each category are also shown.', cache = T}
 
 data(fishveg_dat)
 
@@ -103,11 +160,10 @@ p <- ggplot(toplo, aes(x = fish_cat, group = rich, y = meanest, fill = rich)) +
     ) +
   scale_y_continuous('Vegetation richness')
 print(p)  
-
 ```
 
 
-```{r eval = F, echo = F}
+```{r eval = F, echo = F, cache = T}
 # scatterplots of richness vs CPUE
 # categorize lakes by benthivore p/a
 # summarize veg rich by categories
@@ -136,10 +192,9 @@ ggplot(toplo, aes(x = log(1 + CPUE), y = log(1 + count), colour = fish_cat, grou
   facet_wrap(fish ~ rich) + 
   theme_minimal() + 
   theme(axis.line.x = element_line(), axis.line.y = element_line())
-
 ```
 
-```{r echo = F, results = 'asis'}
+```{r echo = F, results = 'asis', cache = T}
 
 data(fishveg_dat)
 
@@ -161,7 +216,7 @@ stargazer(mod1, mod2,
   type = 'html')
 ```
 
-```{r echo = F, results = 'asis'}
+```{r echo = F, results = 'asis', cache = T}
 
 data(fishveg_dat)
 

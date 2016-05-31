@@ -22,7 +22,7 @@ cpue_fun <- function(dat_in, bhd_yoy = 100, cap_yoy = 150, bywt = TRUE){
   dat$wt_g <- NA
   dat[dat$sp_abb %in% 'CAP', 'wt_g'] <- 10^(-4.44245 + 2.83840 * log10(dat[dat$sp_abb %in% 'CAP', 'tl_mm']))
   dat[dat$sp_abb %in% 'BHD', 'wt_g'] <- 10^(-4.60512 + 2.88495 * log10(dat[dat$sp_abb %in% 'BHD', 'tl_mm']))
-  
+
   # wt to kg
   dat <- rename(dat, wt_kg = wt_g) %>% 
     mutate(wt_kg = wt_kg * 0.001)
