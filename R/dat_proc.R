@@ -89,7 +89,7 @@ source('R/funcs.R')
 # names(fish_ls) <- nms
 # 
 # # columns to keep
-# cols <- c('DOW_NBR_PRIMARY', 'SURVEY_DATE', 'SURVEY_DATE_MONTH_NAME_DV', 'SURVEY_COMPONENT_CLASS_NAME', 'SAMP_STA_TYPE_TOTAL_SETS_DV', 'FISH_SPECIES_ABBREV', 'TOTAL_LENGTH_MM')
+# cols <- c('DOW_NBR_PRIMARY', 'SURVEY_DATE', 'SURVEY_DATE_MONTH_NAME_DV', 'SURVEY_TYPE_NAME', 'SURVEY_COMPONENT_CLASS_NAME', 'SAMP_STA_TYPE_TOTAL_SETS_DV', 'FISH_SPECIES_ABBREV', 'TOTAL_LENGTH_MM')
 # 
 # # surveys to keep
 # srv <- c('Gill Netting', 'Trap Netting')
@@ -97,8 +97,11 @@ source('R/funcs.R')
 # # months to keep
 # mos <- c('July', 'August', 'September')
 # 
-# # species to keep
-# spp <- c('CAP', 'BLB', 'YEB')
+# # species to keep - carp, black bullhead, yellowbullhead, bluegill, black crappie, white crappie, perch, pike, walleye
+# spp <- c('CAP', 'BLB', 'YEB', 'BLG', 'BLC', 'WHC', 'YEP', 'NOP', 'WAE')
+# 
+# # survey type to keep
+# typ <- 'Population Assessment'
 # 
 # # iterate through files
 # # import, format, append to output
@@ -122,7 +125,8 @@ source('R/funcs.R')
 #     mutate(FISH_SPECIES_ABBREV = gsub(other, 'other', FISH_SPECIES_ABBREV)) %>% 
 #     filter(
 #       SURVEY_COMPONENT_CLASS_NAME %in% srv &
-#       SURVEY_DATE_MONTH_NAME_DV %in% mos
+#       SURVEY_DATE_MONTH_NAME_DV %in% mos &
+#       SURVEY_TYPE_NAME %in% typ
 #     ) %>% 
 #     mutate(
 #       TOTAL_LENGTH_MM = as.numeric(TOTAL_LENGTH_MM)
@@ -143,7 +147,7 @@ source('R/funcs.R')
 # 
 # # combine, addl processing
 # fish_all <- do.call('rbind', fish_ls) %>% 
-#   select(-SURVEY_DATE_MONTH_NAME_DV) %>% 
+#   select(-SURVEY_DATE_MONTH_NAME_DV, -SURVEY_TYPE_NAME) %>% 
 #   mutate(
 #     date = as.Date(date, '%m/%d/%Y'),
 #     dow = as.numeric(paste0(dow, '00')), 
