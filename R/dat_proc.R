@@ -146,6 +146,8 @@ source('R/funcs.R')
 # }
 # 
 # # combine, addl processing
+# # bullhead are combined here because the lenght/weight parameters are same for black and yellow
+# # crappie are not combined here because the length/weight parameters are different
 # fish_all <- do.call('rbind', fish_ls) %>% 
 #   select(-SURVEY_DATE_MONTH_NAME_DV, -SURVEY_TYPE_NAME) %>% 
 #   mutate(
@@ -165,7 +167,7 @@ rm(list = ls())
 source('R/funcs.R')
 
 data(fish_all)
-fish_dat <- cpue_fun(fish_all, bhd_yoy = 100, cap_yoy = 150, bywt = TRUE)
+fish_dat <- cpue_fun(fish_all, bywt = TRUE)
 
 save(fish_dat, file = 'data/fish_dat.RData', compress = 'xz')
 

@@ -116,16 +116,8 @@ $(document).ready(function () {
 <h4>Files</h4>
 <p>All data created in <code>R\dat_proc.R</code>. Source data in the ignore folder were created elsewhere.</p>
 <ul>
-<li><p><code>fish_all.RData</code> DNR trapnet/gillnet fish data for all years, one unique record per fish. Only Carp and bullhead species are identified, all other species labelled as ‘other’. Total fish length is reported in mm. Data are only for July, August, September. Includes true zeroes.</p></li>
-<li><p><code>fish_dat.RData</code> Same as <code>fish_all.RData</code> but data are converted to CPUE. CPUE estimated as total fish weight divided by effort, unique to species, date, lake, and gear type. CPUE was esimated separately for trapnet, gillnet, then both were summed. Length to weight equations were from the Handbook of Freshwater Fishery Biology.</p></li>
-</ul>
-<p>For carp, weight in kg from length in mm: <span class="math">\[
-log10(weight) = -4.44245 + 2.83840 * log10(length)
-\]</span></p>
-<p>For bullhead (yellow and black), weight in kg from length in mm: <span class="math">\[
-log10(weight) = -4.60512 + 2.88495 * log10(length)
-\]</span></p>
-<ul>
+<li><p><code>fish_all.RData</code> DNR trapnet/gillnet fish data for all years, one unique record per fish. Carp, bullhead (yellow and black), bluegill, black crappie, white crappie, yellow perch, northern pike, and walleye are identified, all other species labelled as ‘other’. Total fish length is reported in mm. Data are only for July, August, September, standard population assessments only. Includes true zeroes.</p></li>
+<li><p><code>fish_dat.RData</code> Same as <code>fish_all.RData</code> but data are converted to CPUE. CPUE estimated as total fish weight divided by effort, unique to species, date, lake, and gear type. CPUE was estimated separately for trapnet, gillnet. Length to weight equations were from the Handbook of Freshwater Fishery Biology. The arguments to <code>cpue_fun</code> show the species and gear type combos, including parameters for length/weight conversions. Explained in detail below.</p></li>
 <li><p><code>fishveg_dat.RData</code> combined fisheries and veg data, veg data summarized by total rich and subm rich for each lake. Fish and veg data combined if the survey was in the same year. Covariates for each lake include UTM coordinates, ecoregion, watershed area, lake depth, lake area, percent human development in watershed, SDI, and secchi depth.</p></li>
 <li><p><code>veg_dat.RData</code> DNR veg transect data from 1992 to present. Format is dow, date, transect, species, and abundance category. NULL abundance entries are not removed, these are species in the survey but not observed on a transect. Note that there were no lakes in the dataset that had zero veg.</p></li>
 </ul>

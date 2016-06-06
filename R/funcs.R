@@ -1,36 +1,83 @@
 ######
-# summarise bullhead, carp dataset by cpue of adult/yoy
+# summarise fish data from fish_all.RData
 #  
 # dat_in fish_all dataset created in dat_proc.r
 # bhd_yoy upper length limit (mm) for bullhead yoy
 # cap_yoy upper length limit (mm) for carp yoy
 # bywt logical indicating if CPUE is biomass/effort if TRUE, otherwise count/effort
-cpue_fun <- function(dat_in, bhd_yoy = 100, cap_yoy = 150, bywt = TRUE){
+cpue_fun <- function(dat_in, 
+  spp = c('CAP', 'BHD', 'BLG', 'BLC', 'WHC', 'YEP', 'NOP', 'WAE'), 
+  gear = c('GN', 'TN', 'TN', 'TN', 'TN', 'GN', 'GN', 'GN'),
+  yoylim = c(0, 0, 0, 0, 0, 0, 0, 0),
+  slopes = c(2.83840, 2.88495, 3.17266, 3.17980, 3.3835, 3.17285, 3.14178, 3.03606),
+  intercepts = c(-4.44245, -4.60512, -5.10377, -5.24330, -5.8236, -5.33475, -5.61083, -5.14176),
+  bywt = TRUE){
   
   library(tidyr)
   library(dplyr)
-  
-  dat <- dat_in
-  dat$age <- 'adult'
-  
-  # create length classes
-  dat$age[dat$sp_abb == 'CAP' & dat$tl_mm < cap_yoy] <- 'yoy'
-  dat$age[dat$sp_abb == 'BHD' & dat$tl_mm < bhd_yoy] <- 'yoy'
-  
-  # add weight column 
-  # coeffs from Handbook of Freshwater Fishery Biology
-  dat$wt_g <- NA
-  dat[dat$sp_abb %in% 'CAP', 'wt_g'] <- 10^(-4.44245 + 2.83840 * log10(dat[dat$sp_abb %in% 'CAP', 'tl_mm']))
-  dat[dat$sp_abb %in% 'BHD', 'wt_g'] <- 10^(-4.60512 + 2.88495 * log10(dat[dat$sp_abb %in% 'BHD', 'tl_mm']))
 
-  # wt to kg
-  dat <- rename(dat, wt_kg = wt_g) %>% 
-    mutate(wt_kg = wt_kg * 0.001)
+  # combe args
+  combs <- list(spp = spp, gear = gear, yoylim = yoylim, slopes = slopes, intercepts = intercepts)
   
+  ## sanity checks
+  
+  # check species
+  sppchk <- !spp %in% dat_in$sp_abb
+  if(any(sppchk))
+    stop('Check species: ', paste0(spp[sppchk], collapse = ', '), ' not found')
+
+  # check spp, gear, yoylim are all same length
+  lenchk <- lapply(combs, length) %>% 
+    unique
+  if(length(lenchk) > 1)
+    stop('arguments for spp, gear, yoylim must be same length')
+
+  ##
+  # process
+
+  dat <- dat_in
+  dat$age <- ''
+  dat$wt_kg <- NA
+
+  # combs as data.frame, used for weight ests and yoylims
+  combs <- data.frame(spp = spp, gear = gear, yoylim = yoylim, slopes = slopes, intercepts = intercepts)
+
+  # filter species by the gear type, including 'other' species
+  filtvec <- with(combs, paste(paste0('(sp_abb %in% "', spp, '"'), paste0('type %in% "', gear, '")'), sep = ' & '))
+  filtvec <- paste(filtvec, collapse = ' | ')
+  filtvec <- paste0(filtvec, ' | sp_abb %in% "other"')
+  toparse <- paste0('filter(dat, ', filtvec, ')')
+  dat <- eval(parse(text = toparse))
+
+  # get weights for each species
+  # add yoy 
+  for(i in 1:nrow(combs)){
+    
+    # subsets
+    spp <- combs[i, 'spp']
+    yoylim <- combs[i, 'yoylim']
+    slope <- combs[i, 'slopes']
+    intercept <- combs[i, 'intercepts']
+    
+    # add the weight
+    dat[dat$sp_abb %in% spp, 'wt_kg'] <- (10^(intercept + slope * log10(dat[dat$sp_abb %in% spp, 'tl_mm']))) * 0.001
+    
+    # add the yoy
+    dat$age[dat$sp_abb == spp & dat$tl_mm < yoylim] <- 'yoy'
+    
+  }
+
+  # combine black and white crappie
+  # unite species abb and age class
+  dat <- mutate(dat,
+      sp_abb = gsub('BLC|WHC', 'CRP', sp_abb)
+    ) %>% 
+    unite('sp', sp_abb, age, sep ='')
+
   # sum weights for species if T  
   if(bywt){
 
-    dat <- group_by(dat, dow, date, type, sp_abb, age, effort) %>% 
+    dat <- group_by(dat, dow, date, type, sp, effort) %>% 
       summarise(
         ctch = sum(wt_kg, na.rm = TRUE)
       ) %>% 
@@ -39,7 +86,7 @@ cpue_fun <- function(dat_in, bhd_yoy = 100, cap_yoy = 150, bywt = TRUE){
   # otherwise get counts  
   } else {
     
-    dat <- group_by(dat, dow, date, type, sp_abb, age, effort) %>% 
+    dat <- group_by(dat, dow, date, type, sp, effort) %>% 
       summarise(
         ctch = length(tl_mm)
       )
@@ -50,13 +97,13 @@ cpue_fun <- function(dat_in, bhd_yoy = 100, cap_yoy = 150, bywt = TRUE){
   # sum by gear
   # remove species other than carp, bullhead
   dat <- ungroup(dat) %>% 
+    unite('sp', sp, type, sep = '_') %>% 
     mutate(cpue = as.numeric(ctch)/as.numeric(effort)) %>% 
-    group_by(dow, date, sp_abb, age) %>% 
+    group_by(dow, date, sp) %>% 
     summarise(cpue = sum(cpue)) %>% 
     ungroup %>% 
-    unite(var, sp_abb, age, sep = '_') %>% 
-    spread(var, cpue, fill = 0) %>% 
-    select(-other_adult)
+    spread(sp, cpue, fill = 0) %>% 
+    select(-matches('^other'))
   
   return(dat)
     
