@@ -75,7 +75,7 @@ source('R/funcs.R')
 # }
 # 
 # ##
-# # create a master file of carp, bullhead only survey data
+# # create a master file of fish survey data
 # 
 # rm(list = ls())
 # 
@@ -100,9 +100,6 @@ source('R/funcs.R')
 # # species to keep - carp, black bullhead, yellowbullhead, bluegill, black crappie, white crappie, perch, pike, walleye
 # spp <- c('CAP', 'BLB', 'YEB', 'BLG', 'BLC', 'WHC', 'YEP', 'NOP', 'WAE')
 # 
-# # survey type to keep
-# typ <- 'Population Assessment'
-# 
 # # iterate through files
 # # import, format, append to output
 # for(fl in seq_along(fls)){
@@ -125,8 +122,8 @@ source('R/funcs.R')
 #     mutate(FISH_SPECIES_ABBREV = gsub(other, 'other', FISH_SPECIES_ABBREV)) %>% 
 #     filter(
 #       SURVEY_COMPONENT_CLASS_NAME %in% srv &
-#       SURVEY_DATE_MONTH_NAME_DV %in% mos &
-#       SURVEY_TYPE_NAME %in% typ
+#       SURVEY_DATE_MONTH_NAME_DV %in% mos #&
+#       # SURVEY_TYPE_NAME %in% typ
 #     ) %>% 
 #     mutate(
 #       TOTAL_LENGTH_MM = as.numeric(TOTAL_LENGTH_MM)
@@ -145,28 +142,36 @@ source('R/funcs.R')
 #   
 # }
 # 
-# # combine, addl processing
-# # bullhead are combined here because the lenght/weight parameters are same for black and yellow
-# # crappie are not combined here because the length/weight parameters are different
-# fish_all <- do.call('rbind', fish_ls) %>% 
-#   select(-SURVEY_DATE_MONTH_NAME_DV, -SURVEY_TYPE_NAME) %>% 
-#   mutate(
-#     date = as.Date(date, '%m/%d/%Y'),
-#     dow = as.numeric(paste0(dow, '00')), 
-#     type = gsub('[[:space:]]Netting$', '', type), 
-#     type = factor(type, levels = c('Gill', 'Trap'), labels = c('GN', 'TN')), 
-#     sp_abb = gsub('BLB|YEB', 'BHD', sp_abb)
-#     )
-# 
+# fish_all <- do.call('rbind', fish_ls) 
 # save(fish_all, file = 'data/fish_all.RData', compress = 'xz')
 
 ##
 # get cpue of carp, bullhead for YOY and adults, for easy change of tl that defines YOY/adults
+
 rm(list = ls())
 
 source('R/funcs.R')
 
 data(fish_all)
+
+# addl processing for fish_all
+
+# survey types to keep
+srvs <- c('Population Assessment', 'Re-Survey')
+
+# bullhead are combined here because the lenght/weight parameters are same for black and yellow
+# crappie are not combined here because the length/weight parameters are different
+fish_all <- select(fish_all, -SURVEY_DATE_MONTH_NAME_DV) %>% 
+  filter(SURVEY_TYPE_NAME %in% srvs) %>% 
+  mutate(
+    date = as.Date(date, '%m/%d/%Y'),
+    dow = as.numeric(paste0(dow, '00')), 
+    type = gsub('[[:space:]]Netting$', '', type), 
+    type = factor(type, levels = c('Gill', 'Trap'), labels = c('GN', 'TN')), 
+    sp_abb = gsub('BLB|YEB', 'BHD', sp_abb)
+    )
+
+# get cpue for post-processed fish_all dataset
 fish_dat <- cpue_fun(fish_all, bywt = TRUE)
 
 save(fish_dat, file = 'data/fish_dat.RData', compress = 'xz')
@@ -342,6 +347,7 @@ veg_summ <- select(veg_dat, dow, date, abundance, common_name, growth_form) %>%
     dow = as.character(dow), 
     yr = year(veg_date)
   )
+
 # all lake utm coordinates in MN, zone 15N
 lk_locs <- foreign::read.dbf('ignore/10k_pts.dbf') %>% 
   select(MAIN_DOW, UTM_X, UTM_Y) %>% 

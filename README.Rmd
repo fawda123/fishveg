@@ -16,7 +16,7 @@ source('R/funcs.R')
 
 All data created in `R\dat_proc.R`.  Source data in the ignore folder were created elsewhere.
 
-* `fish_all.RData` DNR trapnet/gillnet fish data for all years, one unique record per fish.  Carp, bullhead (yellow and black), bluegill, black crappie, white crappie, yellow perch, northern pike, and walleye are identified, all other species labelled as 'other'. Total fish length is reported in mm. Data are only for July, August, September, standard population assessments only.  Includes true zeroes. 
+* `fish_all.RData` DNR trapnet/gillnet fish data for all years, one unique record per fish.  Carp, back bullhead, yellow bullhead, bluegill, black crappie, white crappie, yellow perch, northern pike, and walleye are identified, all other species labelled as 'other'. Total fish length is reported in mm. Data are only for July, August, September, all survey types. Includes true zeroes. 
 
 * `fish_dat.RData` Same as `fish_all.RData` but data are converted to CPUE.  CPUE estimated as total fish weight divided by effort, unique to species, date, lake, and gear type.  CPUE was estimated separately for trapnet, gillnet. Length to weight equations were from the Handbook of Freshwater Fishery Biology. The arguments to `cpue_fun` show the species and gear type combos, including parameters for length/weight conversions.  Explained in detail below.
 
@@ -26,7 +26,7 @@ All data created in `R\dat_proc.R`.  Source data in the ignore folder were creat
 
 #### Exploratory analysis
 
-```{r fig.height = 6, fig.width = 12, echo = F, fig.cap = 'CPUE (kg per unit effort) of adult bullhead (> 100 mm) and carp (> 150 mm) in lakes surveyed by Minnesota DNR, 1992 to through 2012.  Lakes shown are those with a vegetation survey in the same year.', message = F, cache = T}
+```{r fig.height = 6, fig.width = 12, echo = F, fig.cap = 'CPUE (mean kg per unit effort) of fish surveyed in lakes by Minnesota DNR, 1992 to through 2012.  Lakes shown are those with a vegetation survey in the same year. GN: gillnet, TN: trapnet.  Includes all size classes.', message = F, cache = T}
 library(ggplot2)
 library(maptools)
 library(gridExtra)
@@ -41,9 +41,8 @@ ecoregs$Ecoregion <- factor(ecoregs$id, levels = c(2, 3, 4),
 
 toplo <- fishveg_dat
 
-p1 <- ggplot(ecoregs, aes(x = long, y = lat)) + 
+pbase <- ggplot(ecoregs, aes(x = long, y = lat)) + 
   geom_polygon(aes(x = long, y = lat, group = group, fill= Ecoregion), alpha = 0.5) +
-  geom_point(data = toplo, aes(x = utmx, y = utmy, size = BHD_adult), alpha = 0.8) +
   theme_classic() + 
   theme(axis.line=element_blank(),axis.text.x=element_blank(),
           axis.text.y=element_blank(),axis.ticks=element_blank(),
@@ -55,22 +54,31 @@ p1 <- ggplot(ecoregs, aes(x = long, y = lat)) +
     ) +
   coord_equal()
 
-p2 <- ggplot(ecoregs, aes(x = long, y = lat)) + 
-  geom_polygon(aes(x = long, y = lat, group = group, fill= Ecoregion), alpha = 0.5) +
-  geom_point(data = toplo, aes(x = utmx, y = utmy, size = CAP_adult), alpha = 0.8) +
-  theme_classic() + 
-  theme(axis.line=element_blank(),axis.text.x=element_blank(),
-          axis.text.y=element_blank(),axis.ticks=element_blank(),
-          axis.title.x=element_blank(),
-          axis.title.y=element_blank(),
-          panel.background=element_blank(),panel.border=element_blank(),panel.grid.major=element_blank(),
-          panel.grid.minor=element_blank(),plot.background=element_blank(), 
-          legend.box.just = 'right'
-    ) +
-  coord_equal()
+p1 <- pbase + 
+    geom_point(data = toplo, aes(x = utmx, y = utmy, size = BHD_TN), alpha = 0.8)
+
+p2 <- pbase + 
+  geom_point(data = toplo, aes(x = utmx, y = utmy, size = CAP_GN), alpha = 0.8)
+
+p3 <- pbase + 
+  geom_point(data = toplo, aes(x = utmx, y = utmy, size = BLG_TN), alpha = 0.8)
+
+p4 <- pbase + 
+  geom_point(data = toplo, aes(x = utmx, y = utmy, size = CRP_TN), alpha = 0.8)
+
+p5 <- pbase + 
+  geom_point(data = toplo, aes(x = utmx, y = utmy, size = YEP_GN), alpha = 0.8)
+
+p6 <- pbase + 
+  geom_point(data = toplo, aes(x = utmx, y = utmy, size = NOP_GN), alpha = 0.8)
+
+p7 <- pbase + 
+  geom_point(data = toplo, aes(x = utmx, y = utmy, size = WAE_GN), alpha = 0.8)
 
 grid.arrange(p1, p2, ncol = 2)
-
+grid.arrange(p3, p4, ncol = 2)
+grid.arrange(p5, p6, ncol = 2)
+grid.arrange(p7, ncol = 2)
 ```
 
 

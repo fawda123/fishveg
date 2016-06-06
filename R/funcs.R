@@ -42,13 +42,6 @@ cpue_fun <- function(dat_in,
   # combs as data.frame, used for weight ests and yoylims
   combs <- data.frame(spp = spp, gear = gear, yoylim = yoylim, slopes = slopes, intercepts = intercepts)
 
-  # filter species by the gear type, including 'other' species
-  filtvec <- with(combs, paste(paste0('(sp_abb %in% "', spp, '"'), paste0('type %in% "', gear, '")'), sep = ' & '))
-  filtvec <- paste(filtvec, collapse = ' | ')
-  filtvec <- paste0(filtvec, ' | sp_abb %in% "other"')
-  toparse <- paste0('filter(dat, ', filtvec, ')')
-  dat <- eval(parse(text = toparse))
-
   # get weights for each species
   # add yoy 
   for(i in 1:nrow(combs)){
@@ -104,6 +97,14 @@ cpue_fun <- function(dat_in,
     ungroup %>% 
     spread(sp, cpue, fill = 0) %>% 
     select(-matches('^other'))
+  
+  # finally, remove columns for spp, gear combo that we don't care about 
+  # doing this last will still return lakes that were surveyed but do not contain relevant fish/gear combos
+  nms_kp <- with(combs, c(paste0(spp, 'yoy_', gear), paste0(spp, '_', gear))) %>% 
+    c('dow', 'date', .) %>% 
+    gsub('BLC|WHC', 'CRP', .) %>% 
+    unique
+  dat <- dat[, names(dat) %in% nms_kp]
   
   return(dat)
     
