@@ -70,7 +70,7 @@ cpue_fun <- function(dat_in,
   # sum weights for species if T  
   if(bywt){
 
-    dat <- group_by(dat, dow, date, type, sp, effort) %>% 
+    dat <- group_by(dat, dow, date, gear, sp, effort) %>% 
       summarise(
         ctch = sum(wt_kg, na.rm = TRUE)
       ) %>% 
@@ -79,7 +79,7 @@ cpue_fun <- function(dat_in,
   # otherwise get counts  
   } else {
     
-    dat <- group_by(dat, dow, date, type, sp, effort) %>% 
+    dat <- group_by(dat, dow, date, gear, sp, effort) %>% 
       summarise(
         ctch = length(tl_mm)
       )
@@ -90,7 +90,7 @@ cpue_fun <- function(dat_in,
   # sum by gear
   # remove species other than carp, bullhead
   dat <- ungroup(dat) %>% 
-    unite('sp', sp, type, sep = '_') %>% 
+    unite('sp', sp, gear, sep = '_') %>% 
     mutate(cpue = as.numeric(ctch)/as.numeric(effort)) %>% 
     group_by(dow, date, sp) %>% 
     summarise(cpue = sum(cpue)) %>% 

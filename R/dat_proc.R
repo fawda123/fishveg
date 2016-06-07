@@ -91,17 +91,8 @@ source('R/funcs.R')
 # # columns to keep
 # cols <- c('DOW_NBR_PRIMARY', 'SURVEY_DATE', 'SURVEY_DATE_MONTH_NAME_DV', 'SURVEY_TYPE_NAME', 'SURVEY_COMPONENT_CLASS_NAME', 'SAMP_STA_TYPE_TOTAL_SETS_DV', 'FISH_SPECIES_ABBREV', 'TOTAL_LENGTH_MM')
 # 
-# # surveys to keep
-# srv <- c('Gill Netting', 'Trap Netting')
-# 
-# # months to keep
-# mos <- c('July', 'August', 'September')
-# 
-# # species to keep - carp, black bullhead, yellowbullhead, bluegill, black crappie, white crappie, perch, pike, walleye
-# spp <- c('CAP', 'BLB', 'YEB', 'BLG', 'BLC', 'WHC', 'YEP', 'NOP', 'WAE')
-# 
 # # iterate through files
-# # import, format, append to output
+# # import, minor format, append to output
 # for(fl in seq_along(fls)){
 #     
 #   cat(fl, 'of', length(fls), '\n')
@@ -110,28 +101,17 @@ source('R/funcs.R')
 #   load(file = fls[fl])
 #   dat <- get(nms[fl])
 # 
-#   # other species to label as 'other'
-#   # put in regex format
-#   other <- unique(dat$FISH_SPECIES_ABBREV)
-#   other <- other[!other %in% spp] %>% 
-#     paste0('^', ., '$') %>% 
-#     paste(., collapse = '|') 
-#   
 #   # filter for above
 #   dat <- dat[, cols] %>% 
-#     mutate(FISH_SPECIES_ABBREV = gsub(other, 'other', FISH_SPECIES_ABBREV)) %>% 
-#     filter(
-#       SURVEY_COMPONENT_CLASS_NAME %in% srv &
-#       SURVEY_DATE_MONTH_NAME_DV %in% mos #&
-#       # SURVEY_TYPE_NAME %in% typ
-#     ) %>% 
 #     mutate(
 #       TOTAL_LENGTH_MM = as.numeric(TOTAL_LENGTH_MM)
 #       ) %>% 
 #     rename(
 #       dow = DOW_NBR_PRIMARY, 
 #       date = SURVEY_DATE, 
-#       type = SURVEY_COMPONENT_CLASS_NAME, 
+#       month = SURVEY_DATE_MONTH_NAME_DV,
+#       gear = SURVEY_COMPONENT_CLASS_NAME, 
+#       type = SURVEY_TYPE_NAME,
 #       effort = SAMP_STA_TYPE_TOTAL_SETS_DV, 
 #       sp_abb = FISH_SPECIES_ABBREV, 
 #       tl_mm = TOTAL_LENGTH_MM
@@ -143,11 +123,12 @@ source('R/funcs.R')
 # }
 # 
 # fish_all <- do.call('rbind', fish_ls) 
+# row.names(fish_all) <- 1:nrow(fish_all)
 # save(fish_all, file = 'data/fish_all.RData', compress = 'xz')
 
 ##
-# get cpue of carp, bullhead for YOY and adults, for easy change of tl that defines YOY/adults
-
+# get fish cpue by lake for fish_all
+  
 rm(list = ls())
 
 source('R/funcs.R')
@@ -156,23 +137,44 @@ data(fish_all)
 
 # addl processing for fish_all
 
+# surveys to keep
+srv <- c('Gill Netting', 'Trap Netting')
+
+# months to keep
+mos <- c('July', 'August', 'September')
+
+# species to keep - carp, black bullhead, yellowbullhead, bluegill, black crappie, white crappie, perch, pike, walleye
+spp <- c('CAP', 'BLB', 'YEB', 'BLG', 'BLC', 'WHC', 'YEP', 'NOP', 'WAE')
+
 # survey types to keep
-srvs <- c('Population Assessment', 'Re-Survey')
+typ <- c('Population Assessment', 'Re-Survey')
+
+# other species to label as 'other'
+# put in regex format
+other <- unique(fish_all$sp_abb)
+other <- other[!other %in% spp] %>% 
+  paste0('^', ., '$') %>% 
+  paste(., collapse = '|') 
 
 # bullhead are combined here because the lenght/weight parameters are same for black and yellow
 # crappie are not combined here because the length/weight parameters are different
-fish_all <- select(fish_all, -SURVEY_DATE_MONTH_NAME_DV) %>% 
-  filter(SURVEY_TYPE_NAME %in% srvs) %>% 
+fish_dat <- filter(fish_all, 
+    month %in% mos &
+    type %in% typ &
+    gear %in% srv
+  ) %>% 
+  select(-month, -type) %>% 
   mutate(
     date = as.Date(date, '%m/%d/%Y'),
     dow = as.numeric(paste0(dow, '00')), 
-    type = gsub('[[:space:]]Netting$', '', type), 
-    type = factor(type, levels = c('Gill', 'Trap'), labels = c('GN', 'TN')), 
+    gear = gsub('[[:space:]]Netting$', '', gear), 
+    gear = factor(gear, levels = c('Gill', 'Trap'), labels = c('GN', 'TN')), 
+    sp_abb = gsub(other, 'other', sp_abb),
     sp_abb = gsub('BLB|YEB', 'BHD', sp_abb)
     )
 
 # get cpue for post-processed fish_all dataset
-fish_dat <- cpue_fun(fish_all, bywt = TRUE)
+fish_dat <- cpue_fun(fish_dat, bywt = TRUE)
 
 save(fish_dat, file = 'data/fish_dat.RData', compress = 'xz')
 
