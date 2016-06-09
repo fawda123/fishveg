@@ -16,7 +16,7 @@ cpue_fun <- function(dat_in,
   library(tidyr)
   library(dplyr)
 
-  # combe args
+  # comb args
   combs <- list(spp = spp, gear = gear, yoylim = yoylim, slopes = slopes, intercepts = intercepts)
   
   ## sanity checks
@@ -40,7 +40,7 @@ cpue_fun <- function(dat_in,
   dat$wt_kg <- NA
 
   # combs as data.frame, used for weight ests and yoylims
-  combs <- data.frame(spp = spp, gear = gear, yoylim = yoylim, slopes = slopes, intercepts = intercepts)
+  combs <- data.frame(combs)
 
   # get weights for each species
   # add yoy 
@@ -88,7 +88,7 @@ cpue_fun <- function(dat_in,
 
   # get CPUE as weight (or count) divided by effort
   # sum by gear
-  # remove species other than carp, bullhead
+  # remove 'other' species
   dat <- ungroup(dat) %>% 
     unite('sp', sp, gear, sep = '_') %>% 
     mutate(cpue = as.numeric(ctch)/as.numeric(effort)) %>% 
