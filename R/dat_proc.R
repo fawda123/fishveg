@@ -417,7 +417,8 @@ fishveg_dat <- ungroup(fishveg_dat) %>%
   mutate(dow = as.numeric(dow)) %>% 
   left_join(., covdat, by = 'dow') %>% 
   na.omit %>% 
-  data.frame
+  data.frame %>% 
+  arrange(dow, fish_date)
   
 # save
 save(fishveg_dat, file = 'data/fishveg_dat.RData')
