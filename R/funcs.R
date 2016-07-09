@@ -2,8 +2,11 @@
 # summarise fish data from fish_all.RData
 #  
 # dat_in fish_all dataset created in dat_proc.r
-# bhd_yoy upper length limit (mm) for bullhead yoy
-# cap_yoy upper length limit (mm) for carp yoy
+# spp chr string of species to keep from raw data
+# gear chr string of gear types to keep for each species
+# yoylim numeric indicating length (mm) for separating adult and YOY, creates two columns for the species, set to 0 combines all
+# slopes numeric indicating slope for lenght/weight conversion, from the Handbook of Freshwater Fishery Biology
+# intercepts numeric indicating intercept for length/weight conversion, from the Handbook of Freshwater Fishery Biology
 # bywt logical indicating if CPUE is biomass/effort if TRUE, otherwise count/effort
 cpue_fun <- function(dat_in, 
   spp = c('CAP', 'BHD', 'BLG', 'BLC', 'WHC', 'YEP', 'NOP', 'WAE'), 
