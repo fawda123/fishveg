@@ -22,27 +22,61 @@ All data created in `R\dat_proc.R`.  Source data in the ignore folder were creat
 
 * `fishveg_dat.RData` combined fisheries and veg data, veg data summarized by total rich and subm rich for each lake.  Fish and veg data combined if the survey was in the same year. Covariates for each lake include UTM coordinates, ecoregion, watershed area, lake depth, lake area, percent human development in watershed, SDI, and secchi depth.   
 
+* `map_dat.RData` Several R objects for creating plots. 
+
 * `veg_dat.RData` DNR veg transect data from 1992 to present. Format is dow, date, transect, species, and abundance category.  NULL abundance entries are not removed, these are species in the survey but not observed on a transect.  Note that there were no lakes in the dataset that had zero veg.  
 
 #### Exploratory analysis
 
-```{r fig.height = 6, fig.width = 12, echo = F, fig.cap = 'CPUE (mean kg per unit effort) of fish surveyed in lakes by Minnesota DNR, 1992 to through 2012.  Lakes shown are those with a vegetation survey in the same year. GN: gillnet, TN: trapnet.  Includes all size classes.', message = F, cache = T}
-library(ggplot2)
+```{r fig.height = 7, fig.width = 7, echo = F, message = F, cache = T, warning = F}
+library(tidyverse)
 library(maptools)
 library(gridExtra)
+library(grid)
+library(RColorBrewer)
+load(file = 'data/map_dat.RData')
 
-data(fishveg_dat)
+######
+# maps
 
-ecoregs <- readShapeSpatial('ignore/MN_eco_keep.shp')
+# get legend from an existing ggplot object
+g_legend <- function(a.gplot){
+  tmp <- ggplot_gtable(ggplot_build(a.gplot))
+  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
+  legend <- tmp$grobs[[leg]]
+  return(legend)}
+
+# format data for ggplot
+state <- fortify(state)
 ecoregs <- fortify(ecoregs)
+counties <- fortify(counties)
 ecoregs <- ecoregs[ecoregs$id %in% c(2, 3, 4), ]
 ecoregs$Ecoregion <- factor(ecoregs$id, levels = c(2, 3, 4), 
   labels = c("NF", "ETF", "GP"))
 
-toplo <- fishveg_dat
+# format fish data to same scale
+brks <- c(-Inf, 0, 1, 2, 5, 10, Inf)
+labs <- c('0', '< 1',  '< 2', '< 5', '< 10', '> 10')
+toplo <- select(fishdat, utmx, utmy, common.carp_GN, black.bullhead_TN) %>% 
+  mutate(
+    common.carp_GN = cut(common.carp_GN, breaks = brks, labels = labs),
+    black.bullhead_TN = cut(black.bullhead_TN, breaks = brks, labels = labs)
+    )
 
-pbase <- ggplot(ecoregs, aes(x = long, y = lat)) + 
-  geom_polygon(aes(x = long, y = lat, group = group, fill= Ecoregion), alpha = 0.5) +
+# legend labels, color palette
+leglabs <- list(expression(0), expression(phantom('')<=1), expression(phantom('')<=2), expression(phantom('')<=5), expression(phantom('')<=10), expression(phantom('')>10))
+cols <- colorRampPalette(c('darkgrey', 'black'))(length(leglabs))
+
+# carp cpue GN
+p1 <- ggplot(state, aes(x = long, y = lat)) + 
+  geom_polygon(data = counties, aes(x = long, y = lat, group = group), 
+    fill = NA, colour = 'grey') +
+  geom_polygon(data = ecoregs, aes(x = long, y = lat, group = group, fill= Ecoregion),  
+    alpha = 0.5) +
+  geom_polygon(fill = NA, colour = 'black') +
+  geom_point(data = toplo, aes(x = utmx, y = utmy, size = common.carp_GN, color = common.carp_GN), alpha = 0.8) +
+  scale_size_discrete('Carp kg/net', range = c(2, 12), labels = leglabs) + 
+  scale_colour_manual('Carp kg/net', values = cols, labels = leglabs) +
   theme_classic() + 
   theme(axis.line=element_blank(),axis.text.x=element_blank(),
           axis.text.y=element_blank(),axis.ticks=element_blank(),
@@ -54,179 +88,70 @@ pbase <- ggplot(ecoregs, aes(x = long, y = lat)) +
     ) +
   coord_equal()
 
-p1 <- pbase + 
-    geom_point(data = toplo, aes(x = utmx, y = utmy, size = BHD_TN), alpha = 0.8)
-
-p2 <- pbase + 
-  geom_point(data = toplo, aes(x = utmx, y = utmy, size = CAP_GN), alpha = 0.8)
-
-p3 <- pbase + 
-  geom_point(data = toplo, aes(x = utmx, y = utmy, size = BLG_TN), alpha = 0.8)
-
-p4 <- pbase + 
-  geom_point(data = toplo, aes(x = utmx, y = utmy, size = CRP_TN), alpha = 0.8)
-
-p5 <- pbase + 
-  geom_point(data = toplo, aes(x = utmx, y = utmy, size = YEP_GN), alpha = 0.8)
-
-p6 <- pbase + 
-  geom_point(data = toplo, aes(x = utmx, y = utmy, size = NOP_GN), alpha = 0.8)
-
-p7 <- pbase + 
-  geom_point(data = toplo, aes(x = utmx, y = utmy, size = WAE_GN), alpha = 0.8)
-
-grid.arrange(p1, p2, ncol = 2)
-grid.arrange(p3, p4, ncol = 2)
-grid.arrange(p5, p6, ncol = 2)
-grid.arrange(p7, ncol = 2)
+# save
+# tiff('fig1.tif', height = 7, width = 7, units = 'in', compression = 'lzw', res = 300, family = 'serif')
+p1
+# dev.off()
 ```
-
-
-```{r fig.height = 7, fig.width = 10, echo = F, fig.cap = 'Lake counts in DNR fisheries database with presence/absence of adult bullhead (BHD) and adult carp (CAP).', cache = T}
-
-data(fishveg_dat)
-
-# categorize lakes by benthivore p/a
-# summarize veg rich by categories
-toplo <- dplyr::select(fishveg_dat, BHD_adult, CAP_adult, veg_rich, S_rich) %>% 
-  mutate(
-    BHD_adulttmp = as.character(1 * (BHD_adult > 0)),
-    CAP_adulttmp = as.character(1 * (CAP_adult > 0))
-  ) %>% 
-  unite(fish_cat, BHD_adulttmp, CAP_adulttmp) %>% 
-  mutate(fish_cat = factor(fish_cat, 
-    levels = c('1_1', '1_0', '0_1', '0_0'),
-    labels = c('BHD_CAP', 'BHD_only', 'CAP_only', 'none')
-    )) %>% 
-  group_by(fish_cat) %>% 
-  summarize(count = length(fish_cat))
-
-p <- ggplot(toplo, aes(x = fish_cat, y = count)) + 
-  geom_bar(stat = 'identity') +
-  theme_minimal() + 
-  theme(
-    axis.line.x = element_line(),
-    axis.line.y = element_line(), 
-    axis.title.x = element_blank(), 
-    legend.title = element_blank()
+  
+```{r fig.height = 7, fig.width = 7, echo = F, message = F, cache = T, warning = F}
+# black bullhead CPUE TN
+p2 <- ggplot(state, aes(x = long, y = lat)) + 
+  geom_polygon(data = counties, aes(x = long, y = lat, group = group), 
+    fill = NA, colour = 'grey') +
+  geom_polygon(data = ecoregs, aes(x = long, y = lat, group = group, fill= Ecoregion),  
+    alpha = 0.5) +
+  geom_polygon(fill = NA, colour = 'black') +
+  geom_point(data = toplo, aes(x = utmx, y = utmy, size = black.bullhead_TN, color = black.bullhead_TN), alpha = 0.8) +
+  scale_size_discrete('Bull kg/net', range = c(2, 12), labels = leglabs) + 
+  scale_colour_manual('Bull kg/net', values = cols, labels = leglabs) +
+  theme_classic() + 
+  theme(axis.line=element_blank(),axis.text.x=element_blank(),
+          axis.text.y=element_blank(),axis.ticks=element_blank(),
+          axis.title.x=element_blank(),
+          axis.title.y=element_blank(),
+          panel.background=element_blank(),panel.border=element_blank(),panel.grid.major=element_blank(),
+          panel.grid.minor=element_blank(),plot.background=element_blank(), 
+          legend.box.just = 'right'
     ) +
-  scale_y_continuous('Number of lakes')
-print(p) 
+  coord_equal()
+
+# save
+# tiff('fig2.tif', height = 7, width = 7, units = 'in', compression = 'lzw', res = 300, family = 'serif')
+p2
+# dev.off()
 ```
 
-```{r fig.height = 7, fig.width = 10, echo = F, fig.cap = 'Mean vegetation richness for lakes categorized by presence/absence of adult bullhead (BHD) and adult carp (CAP).  Vegetation richness is summarized for all and submersed species.  95% confidence intervals for each category are also shown.', cache = T}
+```{r fig.height = 5, fig.width = 12, echo = F, message = F, cache = T, warning = F}
+######
+# diagnostic plots
+data(map_dat)
 
-data(fishveg_dat)
-
-# categorize lakes by benthivore p/a
-# summarize veg rich by categories
-toplo <- dplyr::select(fishveg_dat, BHD_adult, CAP_adult, veg_rich, S_rich) %>% 
-  mutate(
-    BHD_adulttmp = as.character(1 * (BHD_adult > 0)),
-    CAP_adulttmp = as.character(1 * (CAP_adult > 0))
+# format data
+toplo <- select(fishdat, 
+  S_rich, common.carp_GN, black.bullhead_TN, bluegill_TN, secchim, sdi, phuman, aream2, shedaream2, ecoreg
   ) %>% 
-  unite(fish_cat, BHD_adulttmp, CAP_adulttmp) %>% 
-  mutate(fish_cat = factor(fish_cat, 
-    levels = c('1_1', '1_0', '0_1', '0_0'),
-    labels = c('BHD_CAP', 'BHD_only', 'CAP_only', 'none')
-    )) %>% 
-  gather('rich', 'count', veg_rich:S_rich) %>%  
-  group_by(fish_cat, rich) %>% 
-  nest %>% 
   mutate(
-    grp_ests = map(data, function(x){
-      
-      summs <- t.test(x$count)
-      meanest <- summs$estimate
-      confest <- summs$conf.int
-      data.frame(meanest, confest[1], confest[2])
-      
-    })) %>% 
-  dplyr::select(-data) %>% 
-  unnest
-
-p <- ggplot(toplo, aes(x = fish_cat, group = rich, y = meanest, fill = rich)) + 
-  geom_bar(stat = 'identity', position = 'dodge') +
-  geom_errorbar(aes(ymin = confest.1., ymax = confest.2.), position = 'dodge') +
-  theme_minimal() + 
+    ecoreg = factor(ecoreg, levels = c('eastern temperate forests', 'great plains'), labels = c('ETF', 'GP'))
+  ) %>% 
+  gather('var', 'val', -S_rich, -ecoreg)
+  
+# create plot
+p3 <- ggplot(toplo, aes(x = val, y = S_rich, fill = ecoreg, colour = ecoreg)) + 
+  geom_point(pch = 21, alpha = 0.8) + 
+  scale_x_log10('Value, log10') +
+  scale_y_continuous('Plant richness', expand = c(0, 0)) + 
+  stat_smooth(method ='lm', colour = 'black', se = TRUE) + 
+  facet_wrap(ecoreg ~ var, ncol = 8, scales = 'free_x') + 
+  theme_bw() + 
   theme(
-    axis.line.x = element_line(),
-    axis.line.y = element_line(), 
-    axis.title.x = element_blank(), 
-    legend.title = element_blank(), 
-    legend.position = 'top'
-    ) +
-  scale_y_continuous('Vegetation richness')
-print(p)  
+    legend.position = 'none',
+    strip.background = element_rect(fill = "white")
+    )
+
+# save
+# tiff('fig3.tif', height = 5, width = 12, units = 'in', compression = 'lzw', res = 300, family = 'serif')
+p3
+# dev.off()
 ```
-
-```{r eval = F, echo = F, cache = T}
-# scatterplots of richness vs CPUE
-# categorize lakes by benthivore p/a
-# summarize veg rich by categories
-toeval <- dplyr::select(fishveg_dat, BHD_adult, CAP_adult, veg_rich, S_rich) %>% 
-  mutate(
-    BHD_adultcat = factor(as.character(1 * (BHD_adult > 0))),
-    CAP_adultcat = factor(as.character(1 * (CAP_adult > 0)))
-  )
-
-toplo <- dplyr::select(fishveg_dat, BHD_adult, CAP_adult, veg_rich, S_rich) %>% 
-  mutate(
-    BHD_adulttmp = as.character(1 * (BHD_adult > 0)),
-    CAP_adulttmp = as.character(1 * (CAP_adult > 0))
-  ) %>% 
-  unite(fish_cat, BHD_adulttmp, CAP_adulttmp) %>% 
-  mutate(fish_cat = factor(fish_cat, 
-    levels = c('1_1', '1_0', '0_1', '0_0'),
-    labels = c('BHD_CAP', 'BHD_only', 'CAP_only', 'none')
-    )) %>% 
-  gather('rich', 'count', veg_rich:S_rich) %>% 
-  gather('fish', 'CPUE', BHD_adult:CAP_adult)
-
-ggplot(toplo, aes(x = log(1 + CPUE), y = log(1 + count), colour = fish_cat, group = fish_cat)) +
-  geom_point() + 
-  stat_smooth(method = 'lm') + 
-  facet_wrap(fish ~ rich) + 
-  theme_minimal() + 
-  theme(axis.line.x = element_line(), axis.line.y = element_line())
-```
-
-```{r echo = F, results = 'asis', cache = T}
-
-data(fishveg_dat)
-
-# categorize lakes by benthivore p/a
-# summarize veg rich by categories
-toeval <- dplyr::select(fishveg_dat, BHD_adult, CAP_adult, veg_rich, S_rich) %>% 
-  mutate(
-    BHD_adult = factor(as.character(1 * (BHD_adult > 0))),
-    CAP_adult = factor(as.character(1 * (CAP_adult > 0)))
-  )
-
-mod1 <- lm(log(1 + veg_rich) ~ BHD_adult * CAP_adult, data = toeval)
-mod2 <- lm(log(1 + S_rich) ~ BHD_adult * CAP_adult, data = toeval)
-
-stargazer(mod1, mod2, 
-  title = 'Categorical regression of vegetation richness for lakes with and without benthivorous fish.  The first model is total vegetation richness and the second is submersed vegetation richness. Model intercepts are lakes with neither adult carp (CAP) nor adult bullhead (BHD).', 
-  dep.var.labels = c('Total', 'Submersed'),
-  single.row = T,
-  type = 'html')
-```
-
-```{r echo = F, results = 'asis', cache = T}
-
-data(fishveg_dat)
-
-# categorize lakes by benthivore p/a
-# summarize veg rich by categories
-toeval <- dplyr::select(fishveg_dat, BHD_adult, CAP_adult, veg_rich, S_rich) 
-
-mod1 <- lm(log(1 + veg_rich) ~ log(1 + BHD_adult) * log(1 + CAP_adult), data = toeval)
-mod2 <- lm(log(1 + S_rich) ~ log(1 + BHD_adult) * log(1 + CAP_adult), data = toeval)
-
-stargazer(mod1, mod2, 
-  title = 'Linear regression of vegetation richness versus adult bullhead and carp CPUE.  The first model is total vegetation richness and the second is submersed vegetation richness.', 
-  dep.var.labels = c('Total', 'Submersed'),
-  single.row = T,
-  type = 'html')
-```
+    

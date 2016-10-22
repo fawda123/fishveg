@@ -7,3 +7,7 @@ stargazer
 sp
 maptools
 gridExtra
+tidyverse
+tibble
+readr
+RColorBrewer
