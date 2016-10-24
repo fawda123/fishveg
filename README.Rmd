@@ -132,6 +132,9 @@ toplo <- select(fishdat,
   S_rich, common.carp_GN, black.bullhead_TN, bluegill_TN, secchim, sdi, phuman, aream2, shedaream2, ecoreg
   ) %>% 
   mutate(
+    common.carp_GN = 1 + common.carp_GN, 
+    black.bullhead_TN = 1 + black.bullhead_TN, 
+    bluegill_TN = 1 + bluegill_TN,
     ecoreg = factor(ecoreg, levels = c('eastern temperate forests', 'great plains'), labels = c('ETF', 'GP'))
   ) %>% 
   gather('var', 'val', -S_rich, -ecoreg)
