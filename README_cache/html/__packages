@@ -4,10 +4,10 @@ ggplot2
 purrr
 dplyr
 stargazer
-sp
-maptools
-gridExtra
 tidyverse
 tibble
 readr
+sp
+maptools
+gridExtra
 RColorBrewer
