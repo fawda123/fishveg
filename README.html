@@ -138,42 +138,7 @@ $(document).ready(function () {
 <p><img src="README_files/figure-html/unnamed-chunk-2-1.png" /><!-- --></p>
 <p><img src="README_files/figure-html/unnamed-chunk-3-1.png" /><!-- --></p>
 <p><img src="README_files/figure-html/unnamed-chunk-4-1.png" /><!-- --></p>
-<pre class="r"><code>data(map_dat)
-
-dat &lt;- select(fishdat, 
-  S_rich, common.carp_GN, black.bullhead_TN, bluegill_TN, secchim, sdi, phuman, aream2, shedaream2
-  ) %&gt;% 
-  mutate(
-    CAP = as.character(1 * (common.carp_GN &gt; 0)),
-    BHD = as.character(1 * (black.bullhead_TN &gt; 0))
-  ) %&gt;% 
-  unite(fish_cat, BHD, CAP) %&gt;% 
-  mutate(
-    fish_cat = factor(fish_cat, 
-      levels = c(&#39;1_1&#39;, &#39;1_0&#39;, &#39;0_1&#39;, &#39;0_0&#39;),
-      labels = c(&#39;BHD_CAP&#39;, &#39;BHD_only&#39;, &#39;CAP_only&#39;, &#39;none&#39;)
-      )
-    ) %&gt;% 
-  select(-common.carp_GN, -black.bullhead_TN)
-lks &lt;- dat$fish_cat
-dat &lt;- select(dat, -fish_cat) %&gt;%
-  decostand(dat, method = &#39;log&#39;, logbase = 10)
-
-# pca  
-pcamod &lt;- prcomp(dat)
-
-# tiff(&#39;fig4.tif&#39;, height = 6, width = 8, units = &#39;in&#39;, compression = &#39;lzw&#39;, res = 300, family = &#39;serif&#39;)
-ggord(pcamod, lks, vec_ext = 3, size = 3, alpha = 0.8)</code></pre>
-<p><img src="README_files/figure-html/unnamed-chunk-5-1.png" /><!-- --></p>
-<pre class="r"><code>dev.off()</code></pre>
-<pre><code>## null device 
-##           1</code></pre>
-<pre class="r"><code># nms
-nmsmod &lt;- metaMDS(dat, distance = &#39;bray&#39;, trace = 0, autotransform = F, k = 2)
-
-tiff(&#39;fig5.tif&#39;, height = 6, width = 8, units = &#39;in&#39;, compression = &#39;lzw&#39;, res = 300, family = &#39;serif&#39;)
-ggord(nmsmod, lks, size = 3, alpha = 0.8)
-# dev.off()</code></pre>
+<p><img src="README_files/figure-html/unnamed-chunk-5-1.png" /><!-- --><img src="README_files/figure-html/unnamed-chunk-5-2.png" /><!-- --></p>
 </div>
 
 
