@@ -11,3 +11,7 @@ sp
 maptools
 gridExtra
 RColorBrewer
+ggord
+permute
+lattice
+vegan

@@ -13,6 +13,8 @@ library(ggplot2)
 library(purrr)
 library(dplyr)
 library(stargazer)
+library(ggord)
+library(vegan)
 source('R/funcs.R')
 ```
 
@@ -161,4 +163,40 @@ p3 <- ggplot(toplo, aes(x = val, y = S_rich, fill = ecoreg, colour = ecoreg)) +
 p3
 # dev.off()
 ```
-    
+
+```{r warning = F, message = F}
+data(map_dat)
+
+dat <- select(fishdat, 
+  S_rich, common.carp_GN, black.bullhead_TN, bluegill_TN, secchim, sdi, phuman, aream2, shedaream2
+  ) %>% 
+  mutate(
+    CAP = as.character(1 * (common.carp_GN > 0)),
+    BHD = as.character(1 * (black.bullhead_TN > 0))
+  ) %>% 
+  unite(fish_cat, BHD, CAP) %>% 
+  mutate(
+    fish_cat = factor(fish_cat, 
+      levels = c('1_1', '1_0', '0_1', '0_0'),
+      labels = c('BHD_CAP', 'BHD_only', 'CAP_only', 'none')
+      )
+    ) %>% 
+  select(-common.carp_GN, -black.bullhead_TN)
+lks <- dat$fish_cat
+dat <- select(dat, -fish_cat) %>%
+  decostand(dat, method = 'log', logbase = 10)
+
+# pca  
+pcamod <- prcomp(dat)
+
+# tiff('fig4.tif', height = 6, width = 8, units = 'in', compression = 'lzw', res = 300, family = 'serif')
+ggord(pcamod, lks, vec_ext = 3, size = 3, alpha = 0.8)
+dev.off()
+
+# nms
+nmsmod <- metaMDS(dat, distance = 'bray', trace = 0, autotransform = F, k = 2)
+
+tiff('fig5.tif', height = 6, width = 8, units = 'in', compression = 'lzw', res = 300, family = 'serif')
+ggord(nmsmod, lks, size = 3, alpha = 0.8)
+# dev.off()
+```

@@ -23,4 +23,53 @@ All data created in `R\dat_proc.R`.  Source data in the ignore folder were creat
 ![](README_files/figure-html/unnamed-chunk-3-1.png)<!-- -->
 
 ![](README_files/figure-html/unnamed-chunk-4-1.png)<!-- -->
-    
+
+
+```r
+data(map_dat)
+
+dat <- select(fishdat, 
+  S_rich, common.carp_GN, black.bullhead_TN, bluegill_TN, secchim, sdi, phuman, aream2, shedaream2
+  ) %>% 
+  mutate(
+    CAP = as.character(1 * (common.carp_GN > 0)),
+    BHD = as.character(1 * (black.bullhead_TN > 0))
+  ) %>% 
+  unite(fish_cat, BHD, CAP) %>% 
+  mutate(
+    fish_cat = factor(fish_cat, 
+      levels = c('1_1', '1_0', '0_1', '0_0'),
+      labels = c('BHD_CAP', 'BHD_only', 'CAP_only', 'none')
+      )
+    ) %>% 
+  select(-common.carp_GN, -black.bullhead_TN)
+lks <- dat$fish_cat
+dat <- select(dat, -fish_cat) %>%
+  decostand(dat, method = 'log', logbase = 10)
+
+# pca  
+pcamod <- prcomp(dat)
+
+# tiff('fig4.tif', height = 6, width = 8, units = 'in', compression = 'lzw', res = 300, family = 'serif')
+ggord(pcamod, lks, vec_ext = 3, size = 3, alpha = 0.8)
+```
+
+![](README_files/figure-html/unnamed-chunk-5-1.png)<!-- -->
+
+```r
+dev.off()
+```
+
+```
+## null device 
+##           1
+```
+
+```r
+# nms
+nmsmod <- metaMDS(dat, distance = 'bray', trace = 0, autotransform = F, k = 2)
+
+tiff('fig5.tif', height = 6, width = 8, units = 'in', compression = 'lzw', res = 300, family = 'serif')
+ggord(nmsmod, lks, size = 3, alpha = 0.8)
+# dev.off()
+```
