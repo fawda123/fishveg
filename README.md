@@ -25,3 +25,5 @@ All data created in `R\dat_proc.R`.  Source data in the ignore folder were creat
 ![](README_files/figure-html/unnamed-chunk-4-1.png)<!-- -->
 
 ![](README_files/figure-html/unnamed-chunk-5-1.png)<!-- -->![](README_files/figure-html/unnamed-chunk-5-2.png)<!-- -->
+
+![](README_files/figure-html/unnamed-chunk-6-1.png)<!-- -->

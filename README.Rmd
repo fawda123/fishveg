@@ -168,7 +168,7 @@ p3
 data(map_dat)
 
 dat <- select(fishdat, 
-  S_rich, common.carp_GN, black.bullhead_TN, bluegill_TN, secchim, sdi, phuman, aream2, shedaream2
+  common.carp_GN, black.bullhead_TN, bluegill_TN, secchim, sdi, phuman, aream2, shedaream2, ecoreg
   ) %>% 
   mutate(
     CAP = as.character(1 * (common.carp_GN > 0)),
@@ -179,24 +179,71 @@ dat <- select(fishdat,
     fish_cat = factor(fish_cat, 
       levels = c('1_1', '1_0', '0_1', '0_0'),
       labels = c('BHD_CAP', 'BHD_only', 'CAP_only', 'none')
-      )
+      ), 
+    ecoreg = factor(ecoreg, levels = c('eastern temperate forests', 'great plains'), labels = c('ETF', 'GP'))
     ) %>% 
   select(-common.carp_GN, -black.bullhead_TN)
-lks <- dat$fish_cat
-dat <- select(dat, -fish_cat) %>%
-  decostand(dat, method = 'log', logbase = 10)
+
+# filter by ecoregion
+datETF <- filter(dat, ecoreg == 'ETF')
+lksETF <- datETF$fish_cat
+datETF <- select(datETF, -fish_cat, -ecoreg) %>% 
+  decostand(method = 'log', logbase = 10)
+datGP <- filter(dat, ecoreg == 'GP')
+lksGP <- datGP$fish_cat
+datGP <- select(datGP, -fish_cat, -ecoreg) %>% 
+  decostand(method = 'log', logbase = 10)
 
 # pca  
-pcamod <- prcomp(dat)
+pcaETF <- prcomp(datETF) 
+pcaGP <- prcomp(datGP)
 
-# tiff('fig4.tif', height = 6, width = 8, units = 'in', compression = 'lzw', res = 300, family = 'serif')
-ggord(pcamod, lks, vec_ext = 3, size = 3, alpha = 0.8)
+# tiff('pcaETF.tif', height = 6, width = 8, units = 'in', compression = 'lzw', res = 300, family = 'serif')
+ggord(pcaETF, lksETF, vec_ext = 3, size = 3, alpha = 0.8) + 
+  ggtitle('ETF')
 # dev.off()
+# tiff('pcaGP.tif', height = 6, width = 8, units = 'in', compression = 'lzw', res = 300, family = 'serif')
+ggord(pcaGP, lksGP, vec_ext = 3, size = 3, alpha = 0.8) + 
+  ggtitle('GP')
+# dev.off()
+```
 
-# nms
-nmsmod <- metaMDS(dat, distance = 'bray', trace = 0, autotransform = F, k = 2)
+```{r warning = F, message = F, echo = F}
+data(map_dat)
 
-# tiff('fig5.tif', height = 6, width = 8, units = 'in', compression = 'lzw', res = 300, family = 'serif')
-ggord(nmsmod, lks, size = 3, alpha = 0.8)
+dat <- select(fishdat, 
+  common.carp_GN, black.bullhead_TN, bluegill_TN, secchim, sdi, phuman, aream2, shedaream2, ecoreg
+  ) %>% 
+  mutate(
+    CAP = as.character(1 * (common.carp_GN > 0)),
+    BHD = as.character(1 * (black.bullhead_TN > 0)),
+    common.carp_GN = 1 + common.carp_GN, 
+    black.bullhead_TN = 1 + black.bullhead_TN,
+    bluegill_TN = 1 + bluegill_TN
+  ) %>% 
+  unite(fish_cat, BHD, CAP) %>% 
+  mutate(
+    fish_cat = factor(fish_cat, 
+      levels = c('1_1', '1_0', '0_1', '0_0'),
+      labels = c('BHD_CAP', 'BHD_only', 'CAP_only', 'none')
+      ), 
+    ecoreg = factor(ecoreg, levels = c('eastern temperate forests', 'great plains'), labels = c('ETF', 'GP'))
+    )
+
+lks <- dat$fish_cat
+ecoreg <- dat$ecoreg
+cpue_dat <- select(dat, black.bullhead_TN, common.carp_GN) %>%
+  decostand(method = 'log', logbase = 10)
+env_dat <- select(dat, -black.bullhead_TN, -common.carp_GN, -fish_cat, -ecoreg) %>% 
+  decostand(method = 'log', logbase = 10)
+
+# rda
+rdamod <- rda(cpue_dat, env_dat)
+
+# tiff('rda_fishcat.tif', height = 6, width = 8, units = 'in', compression = 'lzw', res = 300, family = 'serif')
+ggord(rdamod, grp_in = lks, ellipse = F, ptslab = T, addsize = 3, alpha = 0.8, coord_fix = F)
+# dev.off()
+# tiff('rda_eco.tif', height = 6, width = 8, units = 'in', compression = 'lzw', res = 300, family = 'serif')
+# ggord(rdamod, grp_in = ecoreg, ellipse = F, ptslab = T, addsize = 3, alpha = 0.8, coord_fix = F)
 # dev.off()
 ```
