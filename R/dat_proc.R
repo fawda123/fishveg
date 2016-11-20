@@ -166,15 +166,10 @@ fish_dat <- filter(fish_all,
   select(-month, -type) %>% 
   mutate(
     date = as.Date(date, '%m/%d/%Y'),
-    dow = as.numeric(paste0(dow, '00')), 
-    gear = gsub('[[:space:]]Netting$', '', gear), 
-    gear = factor(gear, levels = c('Gill', 'Trap'), labels = c('GN', 'TN')), 
-    sp_abb = gsub(other, 'other', sp_abb),
-    sp_abb = gsub('BLB|YEB', 'BHD', sp_abb)
-    )
-
-# get cpue for post-processed fish_all dataset
-fish_dat <- cpue_fun(fish_dat, bywt = TRUE)
+    dow = as.numeric(paste0(dow, '00'))
+    ) %>% 
+  group_by(date, dow) %>% 
+  summarise(fish_rich = length(unique(sp_abb)))
 
 save(fish_dat, file = 'data/fish_dat.RData', compress = 'xz')
 
@@ -401,16 +396,17 @@ ecoreg <- over(fishveg_pts, ecoreg) %>%
 fishveg_dat <- left_join(fishveg_dat, ecoreg, by = 'dow')
 
 # organize addl covariate data
-covdat <- select(covdat, DOWLKNUM, depthft, LKACRES, shedaream2, SDI, PDEVL, PAG, secchi) %>% 
+covdat <- select(covdat, DOWLKNUM, Sorderout, depthft, LKACRES, shedaream2, SDI, strmlgth, PDEVL, PAG, secchi) %>% 
   mutate(
     depthm = depthft * 0.3048, 
     aream2 = LKACRES * 4046.86,
     phuman = PDEVL + PAG, 
     sdi = SDI, 
+    strmlgthm = strmlgth,
     secchim = secchi, 
     dow = DOWLKNUM
     ) %>% 
-  select(-depthft, -LKACRES, -PDEVL, -PAG, -SDI, -secchi, -DOWLKNUM)
+  select(-depthft, -LKACRES, -PDEVL, -PAG, -SDI, -secchi, -strmlgth, -DOWLKNUM)
 
 # combine fishveg_dat with covariates
 fishveg_dat <- ungroup(fishveg_dat) %>% 
