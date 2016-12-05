@@ -329,5 +329,5 @@ fishveg_dat <- ungroup(fishveg_dat) %>%
   arrange(dow, fish_date)
   
 # save
-# save(fishveg_dat, file = 'data/fishveg_dat.RData')
-# write.csv(fishveg_dat, 'ignore/fishveg_dat.csv', quote = F, row.names = F)
+save(fishveg_dat, file = 'data/fishveg_dat.RData')
+write.csv(fishveg_dat, 'ignore/fishveg_dat.csv', quote = F, row.names = F)
