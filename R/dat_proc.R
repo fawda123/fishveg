@@ -5,6 +5,8 @@ library(tidyverse)
 library(forcats)
 library(foreign)
 library(maptools)
+library(readxl)
+library(lubridate)
 source('R/funcs.R')
 
 ######
@@ -43,7 +45,7 @@ fish_dat <- mutate(fish_all,
     survey_type %in% typ &
     gear %in% grs
   ) %>% 
-  select(id, survey_date, species_code, gear, catch_cpue) %>% 
+  select(id, survey_date, species_code, gear, catch_cpue, gear_count, total_catch) %>% 
   rename(
     dow = id, 
     date = survey_date
@@ -65,12 +67,20 @@ fish_dat <- mutate(fish_all,
   rename(species_code = fish)
 
 # # check number of lakes/dates with all survey types
-# chk <- group_by(fish_dat, dow, date) %>% 
+# chk <- group_by(fish_dat, dow, date) %>%
 #   summarise(
 #     chkgrs = length(unique(gear))
 #     )
 # table(chk$chkgrs)
-  
+
+# get only fish lakes with all three survey types
+fish_dat <- group_by(fish_dat, dow, date) %>% 
+  mutate(
+    chkgrs = length(unique(gear))
+    ) %>%
+  filter(chkgrs == 3) %>%
+  select(-chkgrs)
+
 save(fish_dat, file = 'data/fish_dat.RData', compress = 'xz')
 
 ######
@@ -249,11 +259,6 @@ veg_summ <- select(veg_dat, dow, date, abundance, common_name, growth_form) %>%
 # get those that only have all three survey types
 # richness estimtes only
 fish_summ <- group_by(fish_dat, dow, date) %>% 
-  mutate(
-    chkgrs = length(unique(gear))
-    ) %>%
-  filter(chkgrs == 3) %>%
-  select(-chkgrs) %>%
   summarise(fish_rich = length(unique(species_code))) %>% 
   ungroup %>% 
   mutate(yr = year(date))
@@ -330,4 +335,3 @@ fishveg_dat <- ungroup(fishveg_dat) %>%
   
 # save
 save(fishveg_dat, file = 'data/fishveg_dat.RData')
-write.csv(fishveg_dat, 'ignore/fishveg_dat.csv', quote = F, row.names = F)
