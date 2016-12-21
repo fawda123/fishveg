@@ -53,8 +53,8 @@ fish_dat <- mutate(fish_all,
   mutate(
     date = as.Date(date),
     dow = as.numeric(dow), 
-    gear = factor(gear),
-    gear = fct_collapse(gear,
+    gear_lng = factor(gear),
+    gear = fct_collapse(gear_lng,
       TN = 'Standard trap nets', 
       GN = 'Standard gill nets', 
       NS = c('15-ft beach seine', '50-ft beach seine', 'Backpack electrofishing')
