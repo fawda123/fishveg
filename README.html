@@ -124,17 +124,18 @@ $(document).ready(function () {
 <h4>Files</h4>
 <p>All data created in <code>R\dat_proc.R</code>. Source data in the ignore folder were created elsewhere.</p>
 <ul>
+<li><p><code>country.RData</code> SpatialPolygonsDataFrame of US conterminous state borders</p></li>
 <li><p><code>fish_dat.RData</code> Same as <code>fish_all.RData</code> but data are converted to CPUE, surveys are Jul/Aug/Sep, and ‘standard population assessments’ and ‘resurveys’. CPUE is estimated as total fish weight (kg) divided by effort, unique to species, date, lake, and gear type. CPUE was estimated separately for trapnet, gillnet. Length to weight equations were from the Handbook of Freshwater Fishery Biology. The arguments to <code>cpue_fun</code> show the species and gear type combos, including parameters for length/weight conversions. Bullhead are black and yellow bullhead combined, and crappie are white and black crappie combined. Species are not separated by adult or yoy.</p></li>
 <li><p><code>fishveg_dat.RData</code> combined fisheries and veg data, veg data summarized by total rich and subm rich for each lake. Fish and veg data combined if the survey was in the same year. Covariates for each lake include UTM coordinates, ecoregion, watershed area, lake depth, lake area, percent human development in watershed, SDI, and secchi depth.</p></li>
 <li><p><code>map_dat.RData</code> Several R objects for creating plots.</p></li>
+<li><p><code>mnstate.RData</code> SpatialPolygonsDataFrame of MN state boundaries</p></li>
 <li><p><code>veg_dat.RData</code> DNR veg transect data from 1992 to present. Format is dow, date, transect, species, and abundance category. NULL abundance entries are not removed, these are species in the survey but not observed on a transect. Note that there were no lakes in the dataset that had zero veg.</p></li>
 </ul>
 </div>
-<div id="exploratory-analysis" class="section level4">
-<h4>Exploratory analysis</h4>
+<div id="figures" class="section level4">
+<h4>Figures</h4>
 <p><img src="README_files/figure-html/unnamed-chunk-2-1.png" /><!-- --></p>
 <p><img src="README_files/figure-html/unnamed-chunk-3-1.png" /><!-- --></p>
-<p><img src="README_files/figure-html/unnamed-chunk-4-1.png" /><!-- --></p>
 <pre class="r"><code>data(map_dat)
 
 dat &lt;- select(fishdat, 
@@ -161,7 +162,7 @@ pcamod &lt;- prcomp(dat)
 
 # tiff(&#39;fig4.tif&#39;, height = 6, width = 8, units = &#39;in&#39;, compression = &#39;lzw&#39;, res = 300, family = &#39;serif&#39;)
 ggord(pcamod, lks, vec_ext = 3, size = 3, alpha = 0.8)</code></pre>
-<p><img src="README_files/figure-html/unnamed-chunk-5-1.png" /><!-- --></p>
+<p><img src="README_files/figure-html/unnamed-chunk-4-1.png" /><!-- --></p>
 <pre class="r"><code>dev.off()</code></pre>
 <pre><code>## null device 
 ##           1</code></pre>
