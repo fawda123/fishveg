@@ -4,7 +4,7 @@ output:
   html_document:
     keep_md: yes
     toc: no
-    self_contained: yes
+    self_contained: no
 ---
 
 ```{r echo = F, message = F, warning = F}
@@ -22,9 +22,9 @@ source('R/funcs.R')
 
 All data created in `R\dat_proc.R`.  Source data in the ignore folder were created elsewhere.
 
-* `fish_dat.RData` DNR CPUE fisheries data, one row per fish.  Months are June through September, standard population assessments and re-surveys.  Sampling gear are gillnet, trapnets, beach seines (15, 50 ft), and backpack electrofishing. Lakes without all three were removed.
+* `fish_dat.RData` Same as `fish_all.RData` but data are converted to CPUE, surveys are Jul/Aug/Sep, and 'standard population assessments' and 'resurveys'.  CPUE is estimated as total fish weight (kg) divided by effort, unique to species, date, lake, and gear type.  CPUE was estimated separately for trapnet, gillnet. Length to weight equations were from the Handbook of Freshwater Fishery Biology. The arguments to `cpue_fun` show the species and gear type combos, including parameters for length/weight conversions.  Bullhead are black and yellow bullhead combined, and crappie are white and black crappie combined. Species are not separated by adult or yoy. 
 
-* `fishveg_dat.RData` combined fisheries and veg data, fish data as total richness, veg data summarized by total rich and subm rich for each lake.  Fish and veg data combined if the survey was in the same year and a fisheries survey had all three sampling types (gillnet, trapnet, nearshore seine/electrofishing). Covariates for each lake include UTM coordinates, ecoregion, Strahler stream order out, watershed area, lake depth, lake area, percent human development in watershed, SDI, stream length in upper watershed, and secchi depth.  
+* `fishveg_dat.RData` combined fisheries and veg data, veg data summarized by total rich and subm rich for each lake.  Fish and veg data combined if the survey was in the same year. Covariates for each lake include UTM coordinates, ecoregion, watershed area, lake depth, lake area, percent human development in watershed, SDI, and secchi depth.   
 
 * `map_dat.RData` Several R objects for creating plots. 
 
@@ -33,7 +33,6 @@ All data created in `R\dat_proc.R`.  Source data in the ignore folder were creat
 #### Exploratory analysis
 
 ```{r fig.height = 7, fig.width = 7, echo = F, message = F, cache = T, warning = F}
-
 library(tidyverse)
 library(maptools)
 library(gridExtra)
@@ -60,20 +59,17 @@ ecoregs$Ecoregion <- factor(ecoregs$id, levels = c(2, 3, 4),
   labels = c("NF", "ETF", "GP"))
 
 # format fish data to same scale
-fishbrks <- c(0, 5, 10, 15, 20, Inf)
-fishlabs <- c('<= 5',  '<= 10', '<= 15', '<= 20', '> 20')
-vegbrks <- c(0, 10, 20, 30, 40, Inf)
-veglabs <- c('<= 10',  '<= 20', '<= 30', '<= 40', '> 40')
-toplo <- select(fishveg_dat, utmx, utmy, fish_rich, veg_rich) %>% 
+brks <- c(-Inf, 0, 1, 2, 5, 10, Inf)
+labs <- c('0', '< 1',  '< 2', '< 5', '< 10', '> 10')
+toplo <- select(fishdat, utmx, utmy, common.carp_GN, black.bullhead_TN) %>% 
   mutate(
-    fish_rich = cut(fish_rich, breaks = fishbrks, labels = fishlabs),
-    veg_rich = cut(veg_rich, breaks = vegbrks, labels = veglabs)
+    common.carp_GN = cut(common.carp_GN, breaks = brks, labels = labs),
+    black.bullhead_TN = cut(black.bullhead_TN, breaks = brks, labels = labs)
     )
 
 # legend labels, color palette
-fishleglabs <- list(expression(phantom('')<=5), expression(phantom('')<=10), expression(phantom('')<=15), expression(phantom('')<=20), expression(phantom('')>20))
-vegleglabs <- list(expression(phantom('')<=10), expression(phantom('')<=20), expression(phantom('')<=30), expression(phantom('')<=40), expression(phantom('')>40))
-cols <- colorRampPalette(c('darkgrey', 'black'))(length(fishleglabs))
+leglabs <- list(expression(0), expression(phantom('')<=1), expression(phantom('')<=2), expression(phantom('')<=5), expression(phantom('')<=10), expression(phantom('')>10))
+cols <- colorRampPalette(c('darkgrey', 'black'))(length(leglabs))
 
 # carp cpue GN
 p1 <- ggplot(state, aes(x = long, y = lat)) + 
@@ -82,9 +78,9 @@ p1 <- ggplot(state, aes(x = long, y = lat)) +
   geom_polygon(data = ecoregs, aes(x = long, y = lat, group = group, fill= Ecoregion),  
     alpha = 0.5) +
   geom_polygon(fill = NA, colour = 'black') +
-  geom_point(data = toplo, aes(x = utmx, y = utmy, size = fish_rich, color = fish_rich), alpha = 0.8) +
-  scale_size_discrete('Fish richness', range = c(1, 8), labels = fishleglabs) + 
-  scale_colour_manual('Fish richness', values = cols, labels = fishleglabs) +
+  geom_point(data = toplo, aes(x = utmx, y = utmy, size = common.carp_GN, color = common.carp_GN), alpha = 0.8) +
+  scale_size_discrete('Carp kg/net', range = c(2, 12), labels = leglabs) + 
+  scale_colour_manual('Carp kg/net', values = cols, labels = leglabs) +
   theme_classic() + 
   theme(axis.line=element_blank(),axis.text.x=element_blank(),
           axis.text.y=element_blank(),axis.ticks=element_blank(),
@@ -100,16 +96,19 @@ p1 <- ggplot(state, aes(x = long, y = lat)) +
 # tiff('fig1.tif', height = 7, width = 7, units = 'in', compression = 'lzw', res = 300, family = 'serif')
 p1
 # dev.off()
-
+```
+  
+```{r fig.height = 7, fig.width = 7, echo = F, message = F, cache = T, warning = F}
+# black bullhead CPUE TN
 p2 <- ggplot(state, aes(x = long, y = lat)) + 
   geom_polygon(data = counties, aes(x = long, y = lat, group = group), 
     fill = NA, colour = 'grey') +
   geom_polygon(data = ecoregs, aes(x = long, y = lat, group = group, fill= Ecoregion),  
     alpha = 0.5) +
   geom_polygon(fill = NA, colour = 'black') +
-  geom_point(data = toplo, aes(x = utmx, y = utmy, size = veg_rich, color = veg_rich), alpha = 0.8) +
-  scale_size_discrete('Veg richness', range = c(1, 8), labels = vegleglabs) + 
-  scale_colour_manual('Veg richness', values = cols, labels = vegleglabs) +
+  geom_point(data = toplo, aes(x = utmx, y = utmy, size = black.bullhead_TN, color = black.bullhead_TN), alpha = 0.8) +
+  scale_size_discrete('Bull kg/net', range = c(2, 12), labels = leglabs) + 
+  scale_colour_manual('Bull kg/net', values = cols, labels = leglabs) +
   theme_classic() + 
   theme(axis.line=element_blank(),axis.text.x=element_blank(),
           axis.text.y=element_blank(),axis.ticks=element_blank(),
@@ -127,52 +126,30 @@ p2
 # dev.off()
 ```
 
-Plant and fish richness vs potential explanatory variables, separated by ecoregion.
-```{r fig.height = 8, fig.width = 12, echo = F, message = F, cache = T, warning = F}
-
+```{r fig.height = 5, fig.width = 12, echo = F, message = F, cache = T, warning = F}
 ######
 # diagnostic plots
 data(map_dat)
 
 # format data
-toplo <- select(fishveg_dat, 
-  veg_rich, fish_rich, secchim, phuman, aream2, shedaream2, strmlgthm, ecoreg
+toplo <- select(fishdat, 
+  S_rich, common.carp_GN, black.bullhead_TN, bluegill_TN, secchim, sdi, phuman, aream2, shedaream2, ecoreg
   ) %>% 
   mutate(
-    ecoreg = factor(ecoreg, levels = c('northern forests', 'eastern temperate forests', 'great plains'), labels = c('NF', 'ETF', 'GP'))
-  ) 
-toplo1 <- gather(toplo, 'var', 'val', -veg_rich, -ecoreg)
-toplo2 <- gather(toplo, 'var', 'val', -fish_rich, -ecoreg)
-toplo3 <- gather(toplo, 'var', 'val', -ecoreg)
+    common.carp_GN = 1 + common.carp_GN, 
+    black.bullhead_TN = 1 + black.bullhead_TN, 
+    bluegill_TN = 1 + bluegill_TN,
+    ecoreg = factor(ecoreg, levels = c('eastern temperate forests', 'great plains'), labels = c('ETF', 'GP'))
+  ) %>% 
+  gather('var', 'val', -S_rich, -ecoreg)
   
 # create plot
-p3 <- ggplot(toplo1, aes(x = val, y = veg_rich, fill = ecoreg, colour = ecoreg)) + 
+p3 <- ggplot(toplo, aes(x = val, y = S_rich, fill = ecoreg, colour = ecoreg)) + 
   geom_point(pch = 21, alpha = 0.8) + 
   scale_x_log10('Value, log10') +
   scale_y_continuous('Plant richness', expand = c(0, 0)) + 
   stat_smooth(method ='lm', colour = 'black', se = TRUE) + 
-  facet_wrap(ecoreg ~ var, ncol = 6, scales = 'free_x') + 
-  theme_bw() + 
-  theme(
-    legend.position = 'none',
-    strip.background = element_rect(fill = "white")
-    )
-p4 <- ggplot(toplo2, aes(x = val, y = fish_rich, fill = ecoreg, colour = ecoreg)) + 
-  geom_point(pch = 21, alpha = 0.8) + 
-  scale_x_log10('Value, log10') +
-  scale_y_continuous('Fish richness', expand = c(0, 0)) + 
-  stat_smooth(method ='lm', colour = 'black', se = TRUE) + 
-  facet_wrap(ecoreg ~ var, ncol = 6, scales = 'free_x') + 
-  theme_bw() + 
-  theme(
-    legend.position = 'none',
-    strip.background = element_rect(fill = "white")
-    )
-
-p5 <- ggplot(toplo3, aes(x = val, fill = ecoreg, colour = ecoreg)) + 
-  geom_histogram() + 
-  scale_x_log10('Value, log10') +
-  facet_wrap(ecoreg ~ var, ncol = 7, scales = 'free_x') + 
+  facet_wrap(ecoreg ~ var, ncol = 8, scales = 'free_x') + 
   theme_bw() + 
   theme(
     legend.position = 'none',
@@ -182,9 +159,42 @@ p5 <- ggplot(toplo3, aes(x = val, fill = ecoreg, colour = ecoreg)) +
 # save
 # tiff('fig3.tif', height = 5, width = 12, units = 'in', compression = 'lzw', res = 300, family = 'serif')
 p3
-p4
-p5
 # dev.off()
 ```
 
+```{r warning = F, message = F}
+data(map_dat)
 
+dat <- select(fishdat, 
+  S_rich, common.carp_GN, black.bullhead_TN, bluegill_TN, secchim, sdi, phuman, aream2, shedaream2
+  ) %>% 
+  mutate(
+    CAP = as.character(1 * (common.carp_GN > 0)),
+    BHD = as.character(1 * (black.bullhead_TN > 0))
+  ) %>% 
+  unite(fish_cat, BHD, CAP) %>% 
+  mutate(
+    fish_cat = factor(fish_cat, 
+      levels = c('1_1', '1_0', '0_1', '0_0'),
+      labels = c('BHD_CAP', 'BHD_only', 'CAP_only', 'none')
+      )
+    ) %>% 
+  select(-common.carp_GN, -black.bullhead_TN)
+lks <- dat$fish_cat
+dat <- select(dat, -fish_cat) %>%
+  decostand(dat, method = 'log', logbase = 10)
+
+# pca  
+pcamod <- prcomp(dat)
+
+# tiff('fig4.tif', height = 6, width = 8, units = 'in', compression = 'lzw', res = 300, family = 'serif')
+ggord(pcamod, lks, vec_ext = 3, size = 3, alpha = 0.8)
+dev.off()
+
+# nms
+nmsmod <- metaMDS(dat, distance = 'bray', trace = 0, autotransform = F, k = 2)
+
+tiff('fig5.tif', height = 6, width = 8, units = 'in', compression = 'lzw', res = 300, family = 'serif')
+ggord(nmsmod, lks, size = 3, alpha = 0.8)
+# dev.off()
+```
