@@ -45,6 +45,61 @@ All data created in `R\dat_proc.R`.  Source data in the ignore folder were creat
 
 * `veg_dat.RData` DNR veg transect data from 1992 to present. Format is dow, date, transect, species, and abundance category.  NULL abundance entries are not removed, these are species in the survey but not observed on a transect.  Note that there were no lakes in the dataset that had zero veg.  
 
+#### Summary table
+
+```{r sumtab, results = 'asis'}
+# diagnostic plots
+data(map_dat)
+
+# format data
+totab <- select(fishdat, 
+                S_rich, common.carp_GN, black.bullhead_TN, bluegill_TN, secchim, sdi, phuman, aream2, shedaream2, ecoreg, depthm
+) %>% 
+  mutate(
+    ecoreg = factor(ecoreg, levels = c('eastern temperate forests', 'great plains'), labels = c('ETF', 'GP'))
+  ) %>% 
+  rename(
+    SpeciesRichness = S_rich, 
+    Carp = common.carp_GN,
+    Bullhead = black.bullhead_TN, 
+    Bluegill = bluegill_TN,
+    Secchi = secchim, 
+    SDI = sdi, 
+    Human = phuman, 
+    Area = aream2,
+    ShedArea = shedaream2,
+    Depth = depthm, 
+    Ecoregion = ecoreg
+  ) %>% 
+  mutate(
+    Area = Area * 1e-6,
+    ShedArea = ShedArea * 1e-6
+  ) %>% 
+  gather('var', 'val', -Ecoregion) %>% 
+  mutate(var = factor(var, 
+                      levels = c('SpeciesRichness', 'Carp', 'Bullhead', 'Bluegill', 'Area', 'Depth', 'Human', 'SDI', 'Secchi', 'ShedArea'))
+         ) %>% 
+  group_by(Ecoregion, var) %>% 
+  summarise(
+    Average = round(mean(val, na.rm = T), 1), 
+    Median  = round(median(val, na.rm = T), 1),
+    Var. = round(var(val, na.rm = T), 1), 
+    Min. = round(min(val, na.rm = T), 1),
+    Max. = round(max(val, na.rm = T), 1)
+  ) %>% 
+  unite('Min./Max.', Min., Max., sep = ' / ') %>% 
+  ungroup %>% 
+  mutate(
+    Median = paste0('(', Median, ')'), 
+    Ecoregion = ifelse(duplicated(Ecoregion), '', as.character(Ecoregion)),
+    Var. = as.character(Var.)
+  ) %>% 
+  unite('Ave. (Med.)', Average, Median, sep = ' ')
+
+write.csv(totab, 'ignore/summtab.csv', quote = F, row.names = F)
+kable(totab)
+```
+
 #### Figures
 
 ```{r Fig1, fig.height = 7, fig.width = 12}
@@ -71,9 +126,9 @@ g_legend <- function(a.gplot){
 state <- fortify(state)
 ecoregs <- fortify(ecoregs)
 counties <- fortify(counties)
-ecoregs <- ecoregs[ecoregs$id %in% c(2, 3, 4), ]
-ecoregs$Ecoregion <- factor(ecoregs$id, levels = c(2, 3, 4), 
-  labels = c("NF", "ETF", "GP"))
+ecoregs <- ecoregs[ecoregs$id %in% c(3, 4), ]
+ecoregs$Ecoregion <- factor(ecoregs$id, levels = c(3, 4), 
+  labels = c("ETF", "GP"))
 
 # format fish data to same scale
 brks <- c(-Inf, 0, 1, 2, 5, 10, Inf)
@@ -177,7 +232,7 @@ data(map_dat)
 
 # format data
 toplo <- select(fishdat, 
-  S_rich, common.carp_GN, black.bullhead_TN, bluegill_TN, secchim, sdi, phuman, aream2, shedaream2, ecoreg
+  S_rich, common.carp_GN, black.bullhead_TN, bluegill_TN, secchim, sdi, phuman, aream2, shedaream2, ecoreg, depthm
   ) %>% 
   mutate(
     common.carp_GN = 1 + common.carp_GN, 
@@ -185,15 +240,28 @@ toplo <- select(fishdat,
     bluegill_TN = 1 + bluegill_TN,
     ecoreg = factor(ecoreg, levels = c('eastern temperate forests', 'great plains'), labels = c('ETF', 'GP'))
   ) %>% 
-  gather('var', 'val', -S_rich, -ecoreg)
+  rename(
+    SpeciesRichness = S_rich, 
+    Carp = common.carp_GN,
+    Bullhead = black.bullhead_TN, 
+    Bluegill = bluegill_TN,
+    Secchi = secchim, 
+    SDI = sdi, 
+    Human = phuman, 
+    Area = aream2,
+    ShedArea = shedaream2,
+    Depth = depthm, 
+    Ecoregion = ecoreg
+  ) %>% 
+  gather('var', 'val', -SpeciesRichness, -Ecoregion)
   
 # create plot
-p3 <- ggplot(toplo, aes(x = val, y = S_rich, fill = ecoreg, colour = ecoreg)) + 
+p3 <- ggplot(toplo, aes(x = val, y = SpeciesRichness, fill = Ecoregion, colour = Ecoregion)) + 
   geom_point(pch = 21, alpha = 0.8) + 
   scale_x_log10('Value, log10') +
   scale_y_continuous('Plant richness', expand = c(0, 0)) + 
   stat_smooth(method ='lm', colour = 'black', se = TRUE) + 
-  facet_wrap(ecoreg ~ var, ncol = 8, scales = 'free_x') + 
+  facet_wrap(Ecoregion ~ var, ncol = 9, scales = 'free_x') + 
   theme_bw() + 
   theme(
     legend.position = 'none',
@@ -207,26 +275,30 @@ p3
 ```
 
 ```{r Fig3, fig.height = 5, fig.width =7.5}
-merged_2<-read.csv("ignore/merged_2.csv")
+merged_2 <- read.csv("ignore/merged_2.csv")
 
-d <- merged_2[,c("S_rich", "common.carp_GN", "black.bullhead_TN", "bluegill_TN", 
-                 "secchim", "sdi", "phuman", "aream2", "shedaream2","ecoreg", "depthm")]
-names(d) <- c("SpeciesRichness", "Carp", "Bullhead", "Bluegill", "Secchi", "SDI", 
-              "Human", "Area", "ShedArea", "Ecoregion", "Depth")
+d <- merged_2[, c(
+  "S_rich", "common.carp_GN", "black.bullhead_TN", "bluegill_TN",
+  "secchim", "sdi", "phuman", "aream2", "shedaream2", "ecoreg", "depthm"
+)]
+names(d) <- c(
+  "SpeciesRichness", "Carp", "Bullhead", "Bluegill", "Secchi", "SDI",
+  "Human", "Area", "ShedArea", "Ecoregion", "Depth"
+)
 levels(d$Ecoregion) <- c("Forest", "Plain")
 
 d <- within(d, {
-  Bullhead.cut <- cut(Bullhead,c(-Inf,0,0.5,1,2,5,10,20,Inf))
-  Carp.cut <- cut(Carp,c(-Inf,0,0.5,1,2,5,10,20,Inf))
-  Bullhead.plusMin <- Bullhead+min(Bullhead[Bullhead>0])
-  Carp.plusMin <- Carp+min(Carp[Carp>0])
-  Bluegill.plusMin <- Bluegill+min(Bluegill[Bluegill>0])
+  Bullhead.cut <- cut(Bullhead, c(-Inf, 0, 0.5, 1, 2, 5, 10, 20, Inf))
+  Carp.cut <- cut(Carp, c(-Inf, 0, 0.5, 1, 2, 5, 10, 20, Inf))
+  Bullhead.plusMin <- Bullhead + min(Bullhead[Bullhead > 0])
+  Carp.plusMin <- Carp + min(Carp[Carp > 0])
+  Bluegill.plusMin <- Bluegill + min(Bluegill[Bluegill > 0])
 })
 d$AnyCarp <- ifelse(d$Carp > 1, "C", "NC") ## 1 is a value for Carp and bullhead when impact becomes visible
 d$AnyBullhead <- ifelse(d$Bullhead > 1, "B", "NB")
 d$Group <- factor(paste0(d$AnyCarp, "-", d$AnyBullhead))
 d$Group <- relevel(d$Group, "NC-NB")
-d1<-subset(d, ShedArea<100000000 & Area<10000000)
+d1 <- subset(d, ShedArea < 100000000 & Area < 10000000)
 
 ppp <- princomp(d1[,c( "Depth", "Secchi", "Area", "SDI", "ShedArea", "Human", "Bluegill")], cor=TRUE)
 
@@ -234,7 +306,7 @@ mythm <- theme_bw(base_family = 'serif') +
   theme(
   legend.position = 'none', 
   strip.background = element_blank(), 
-  plot.margin = margin(0, 0, 0, 0, "cm")
+  plot.margin = margin(0, 2, 0, 2, "pt")
 ) 
 
 p1 <- ggord(ppp, grp_in = d1$Group, vec_ext = 7, facet = T, nfac = 4, alpha = 0.8, size = 2, txt = 2, arrow = 0.2) + 
@@ -247,3 +319,4 @@ p2 <- ggord(ppp, axes = c(3, 4), grp_in = d1$Group, vec_ext = 7, facet = T, nfac
 grid.arrange(p1, p2, ncol = 1)
 # dev.off()
 ```
+

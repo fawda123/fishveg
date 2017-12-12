@@ -18,6 +18,32 @@ All data created in `R\dat_proc.R`.  Source data in the ignore folder were creat
 
 * `veg_dat.RData` DNR veg transect data from 1992 to present. Format is dow, date, transect, species, and abundance category.  NULL abundance entries are not removed, these are species in the survey but not observed on a transect.  Note that there were no lakes in the dataset that had zero veg.  
 
+#### Summary table
+
+
+Ecoregion   var               Ave. (Med.)    Var.      Min./Max.    
+----------  ----------------  -------------  --------  -------------
+ETF         SpeciesRichness   10.3 (10)      27.6      0 / 24       
+            Carp              2.1 (0.4)      23        0 / 45.1     
+            Bullhead          1.4 (0.1)      42.6      0 / 87.4     
+            Bluegill          1.9 (1.1)      6.7       0 / 18       
+            Area              2.5 (1.4)      12.3      0.1 / 22.5   
+            Depth             11.2 (9.7)     50.5      1.8 / 34.2   
+            Human             0.6 (0.6)      0         0.1 / 1      
+            SDI               1.7 (1.5)      0.4       1.1 / 4.4    
+            Secchi            1.6 (1.4)      0.7       0.3 / 5.4    
+            ShedArea          112.5 (28.9)   77601.3   0.2 / 2808.1 
+GP          SpeciesRichness   3.6 (3)        13.6      0 / 16       
+            Carp              6.1 (3.7)      47.8      0 / 36       
+            Bullhead          5.8 (1.9)      95        0 / 48.4     
+            Bluegill          0.5 (0.1)      1.8       0 / 10.8     
+            Area              2.3 (1.5)      6.7       0.2 / 10.9   
+            Depth             4.7 (3.4)      13.7      1.5 / 25.3   
+            Human             0.7 (0.8)      0         0.4 / 0.9    
+            SDI               1.7 (1.5)      0.3       1 / 3.5      
+            Secchi            0.8 (0.6)      0.4       0.2 / 3.5    
+            ShedArea          34.1 (10.8)    2134.9    1.2 / 249.4  
+
 #### Figures
 
 <img src="README_files/figure-html/Fig1.png" width="60%" style="display: block; margin: auto;" />
@@ -25,3 +51,4 @@ All data created in `R\dat_proc.R`.  Source data in the ignore folder were creat
 <img src="README_files/figure-html/Fig2.png" width="60%" style="display: block; margin: auto;" />
 
 <img src="README_files/figure-html/Fig3.png" width="60%" style="display: block; margin: auto;" />
+
