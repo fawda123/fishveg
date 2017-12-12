@@ -21,7 +21,7 @@ All data created in `R\dat_proc.R`.  Source data in the ignore folder were creat
 #### Summary table
 
 
-Ecoregion   var               Ave. (Med.)    Var.      Min./Max.    
+Ecoregion   Variable          Ave. (Med.)    Var.      Min./Max.    
 ----------  ----------------  -------------  --------  -------------
 ETF         SpeciesRichness   10.3 (10)      27.6      0 / 24       
             Carp              2.1 (0.4)      23        0 / 45.1     
@@ -43,6 +43,27 @@ GP          SpeciesRichness   3.6 (3)        13.6      0 / 16
             SDI               1.7 (1.5)      0.3       1 / 3.5      
             Secchi            0.8 (0.6)      0.4       0.2 / 3.5    
             ShedArea          34.1 (10.8)    2134.9    1.2 / 249.4  
+
+
+```
+##  var      vif             
+##  Carp     1.40087938822791
+##  Bullhead 1.32609969244421
+##  Bluegill 1.2967275170074 
+##  Secchi   2.31599398230004
+##  SDI      1.34263804704789
+##  Human    1.22289758460126
+##  Area     1.65132535880825
+##  ShedArea 1.61081633407663
+##  Depth    2.36527586392161
+## 
+## All variables have VIF < 10, max VIF 2.37
+```
+
+```
+## [1] "Carp"     "Bullhead" "Bluegill" "Secchi"   "SDI"      "Human"   
+## [7] "Area"     "ShedArea" "Depth"
+```
 
 #### Figures
 

@@ -75,11 +75,11 @@ totab <- select(fishdat,
     Area = Area * 1e-6,
     ShedArea = ShedArea * 1e-6
   ) %>% 
-  gather('var', 'val', -Ecoregion) %>% 
-  mutate(var = factor(var, 
+  gather('Variable', 'val', -Ecoregion) %>% 
+  mutate(Variable = factor(Variable, 
                       levels = c('SpeciesRichness', 'Carp', 'Bullhead', 'Bluegill', 'Area', 'Depth', 'Human', 'SDI', 'Secchi', 'ShedArea'))
          ) %>% 
-  group_by(Ecoregion, var) %>% 
+  group_by(Ecoregion, Variable) %>% 
   summarise(
     Average = round(mean(val, na.rm = T), 1), 
     Median  = round(median(val, na.rm = T), 1),
@@ -98,6 +98,16 @@ totab <- select(fishdat,
 
 write.csv(totab, 'ignore/summtab.csv', quote = F, row.names = F)
 kable(totab)
+```
+
+```{r}
+merged_2<-read.csv("ignore/merged_2.csv")
+d <- merged_2[,c("common.carp_GN", "black.bullhead_TN", "bluegill_TN", 
+                 "secchim", "sdi", "phuman", "aream2", "shedaream2", "depthm")]
+names(d) <- c("Carp", "Bullhead", "Bluegill", "Secchi", "SDI", 
+              "Human", "Area", "ShedArea", "Depth")
+d <- log(1 + d)
+vif_func(d)
 ```
 
 #### Figures
