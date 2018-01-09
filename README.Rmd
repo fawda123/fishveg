@@ -256,7 +256,7 @@ toplo <- select(fishdat,
     Bullhead = black.bullhead_TN, 
     Bluegill = bluegill_TN,
     Secchi = secchim, 
-    SDI = sdi, 
+    SI = sdi, 
     Human = phuman, 
     Area = aream2,
     ShedArea = shedaream2,
@@ -292,7 +292,7 @@ d <- merged_2[, c(
   "secchim", "sdi", "phuman", "aream2", "shedaream2", "ecoreg", "depthm"
 )]
 names(d) <- c(
-  "SpeciesRichness", "Carp", "Bullhead", "Bluegill", "Secchi", "SDI",
+  "SpeciesRichness", "Carp", "Bullhead", "Bluegill", "Secchi", "SI",
   "Human", "Area", "ShedArea", "Ecoregion", "Depth"
 )
 levels(d$Ecoregion) <- c("Forest", "Plain")
@@ -310,7 +310,7 @@ d$Group <- factor(paste0(d$AnyCarp, "-", d$AnyBullhead))
 d$Group <- relevel(d$Group, "NC-NB")
 d1 <- subset(d, ShedArea < 100000000 & Area < 10000000)
 
-ppp <- princomp(d1[,c( "Depth", "Secchi", "Area", "SDI", "ShedArea", "Human", "Bluegill")], cor=TRUE)
+ppp <- princomp(d1[,c( "Depth", "Secchi", "Area", "SI", "ShedArea", "Human", "Bluegill")], cor=TRUE)
 
 mythm <- theme_bw(base_family = 'serif') +
   theme(
