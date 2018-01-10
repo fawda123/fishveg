@@ -330,3 +330,77 @@ grid.arrange(p1, p2, ncol = 1)
 # dev.off()
 ```
 
+#### Between group differences
+
+```{r, fig.height = 4, fig.width = 5, echo = T}
+library(vegan)
+library(tidyverse)
+library(mvabund)
+
+# prep data
+merged_2 <- read.csv("ignore/merged_2.csv")
+
+d <- merged_2[, c(
+  "S_rich", "common.carp_GN", "black.bullhead_TN", "bluegill_TN",
+  "secchim", "sdi", "phuman", "aream2", "shedaream2", "ecoreg", "depthm"
+)]
+names(d) <- c(
+  "SpeciesRichness", "Carp", "Bullhead", "Bluegill", "Secchi", "SI",
+  "Human", "Area", "ShedArea", "Ecoregion", "Depth"
+)
+levels(d$Ecoregion) <- c("Forest", "Plain")
+
+d <- within(d, {
+  Bullhead.cut <- cut(Bullhead, c(-Inf, 0, 0.5, 1, 2, 5, 10, 20, Inf))
+  Carp.cut <- cut(Carp, c(-Inf, 0, 0.5, 1, 2, 5, 10, 20, Inf))
+  Bullhead.plusMin <- Bullhead + min(Bullhead[Bullhead > 0])
+  Carp.plusMin <- Carp + min(Carp[Carp > 0])
+  Bluegill.plusMin <- Bluegill + min(Bluegill[Bluegill > 0])
+})
+d$AnyCarp <- ifelse(d$Carp > 1, "C", "NC") ## 1 is a value for Carp and bullhead when impact becomes visible
+d$AnyBullhead <- ifelse(d$Bullhead > 1, "B", "NB")
+d$Group <- factor(paste0(d$AnyCarp, "-", d$AnyBullhead))
+d$Group <- relevel(d$Group, "NC-NB")
+d1 <- subset(d, ShedArea < 100000000 & Area < 10000000)
+
+# get distance matrix of fish abundance
+abudist <- d1 %>% 
+  select(Carp, Bullhead) %>% 
+  vegdist
+
+# lake groups
+grps <- d1$Group
+
+# exploratory plot
+toplo <- d1 %>% 
+  select(Carp, Bullhead, Group) %>% 
+  gather('spp', 'abu', -Group) %>% 
+  group_by(Group, spp) %>% 
+  summarise(
+    ave = mean(abu, na.rm = T), 
+    vrc = var(abu, na.rm = T)
+  )
+
+ggplot(toplo, aes(x = ave, y = vrc, colour = spp, shape = Group)) + 
+  geom_point(size = 6) + 
+  theme_bw() + 
+  scale_x_log10('Log-mean abundance') + 
+  scale_y_log10('Log-variance abundance')
+
+# get multivariate homogeneity of groups
+bdisper <- betadisper(abudist, grps)
+
+# test if one or more groups is more variable than the others
+# variance between group is not homogenous
+permutest(bdisper)
+
+# multivariate abundance
+abund <- d1 %>% 
+  select(Carp, Bullhead) %>% 
+  mvabund
+
+# test for group (location) effecgt
+mod <- manyglm(abund ~ grps, family = 'negative.binomial')
+anova(mod)
+```
+

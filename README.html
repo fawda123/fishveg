@@ -310,6 +310,102 @@ $(document).ready(function () {
 <p><img src="README_files/figure-html/Fig2.png" width="60%" style="display: block; margin: auto;" /></p>
 <p><img src="README_files/figure-html/Fig3.png" width="60%" style="display: block; margin: auto;" /></p>
 </div>
+<div id="between-group-differences" class="section level4">
+<h4>Between group differences</h4>
+<pre class="r"><code>library(vegan)
+library(tidyverse)
+library(mvabund)
+
+# prep data
+merged_2 &lt;- read.csv(&quot;ignore/merged_2.csv&quot;)
+
+d &lt;- merged_2[, c(
+  &quot;S_rich&quot;, &quot;common.carp_GN&quot;, &quot;black.bullhead_TN&quot;, &quot;bluegill_TN&quot;,
+  &quot;secchim&quot;, &quot;sdi&quot;, &quot;phuman&quot;, &quot;aream2&quot;, &quot;shedaream2&quot;, &quot;ecoreg&quot;, &quot;depthm&quot;
+)]
+names(d) &lt;- c(
+  &quot;SpeciesRichness&quot;, &quot;Carp&quot;, &quot;Bullhead&quot;, &quot;Bluegill&quot;, &quot;Secchi&quot;, &quot;SI&quot;,
+  &quot;Human&quot;, &quot;Area&quot;, &quot;ShedArea&quot;, &quot;Ecoregion&quot;, &quot;Depth&quot;
+)
+levels(d$Ecoregion) &lt;- c(&quot;Forest&quot;, &quot;Plain&quot;)
+
+d &lt;- within(d, {
+  Bullhead.cut &lt;- cut(Bullhead, c(-Inf, 0, 0.5, 1, 2, 5, 10, 20, Inf))
+  Carp.cut &lt;- cut(Carp, c(-Inf, 0, 0.5, 1, 2, 5, 10, 20, Inf))
+  Bullhead.plusMin &lt;- Bullhead + min(Bullhead[Bullhead &gt; 0])
+  Carp.plusMin &lt;- Carp + min(Carp[Carp &gt; 0])
+  Bluegill.plusMin &lt;- Bluegill + min(Bluegill[Bluegill &gt; 0])
+})
+d$AnyCarp &lt;- ifelse(d$Carp &gt; 1, &quot;C&quot;, &quot;NC&quot;) ## 1 is a value for Carp and bullhead when impact becomes visible
+d$AnyBullhead &lt;- ifelse(d$Bullhead &gt; 1, &quot;B&quot;, &quot;NB&quot;)
+d$Group &lt;- factor(paste0(d$AnyCarp, &quot;-&quot;, d$AnyBullhead))
+d$Group &lt;- relevel(d$Group, &quot;NC-NB&quot;)
+d1 &lt;- subset(d, ShedArea &lt; 100000000 &amp; Area &lt; 10000000)
+
+# get distance matrix of fish abundance
+abudist &lt;- d1 %&gt;% 
+  select(Carp, Bullhead) %&gt;% 
+  vegdist
+
+# lake groups
+grps &lt;- d1$Group
+
+# exploratory plot
+toplo &lt;- d1 %&gt;% 
+  select(Carp, Bullhead, Group) %&gt;% 
+  gather(&#39;spp&#39;, &#39;abu&#39;, -Group) %&gt;% 
+  group_by(Group, spp) %&gt;% 
+  summarise(
+    ave = mean(abu, na.rm = T), 
+    vrc = var(abu, na.rm = T)
+  )
+
+ggplot(toplo, aes(x = ave, y = vrc, colour = spp, shape = Group)) + 
+  geom_point(size = 6) + 
+  theme_bw() + 
+  scale_x_log10(&#39;Log-mean abundance&#39;) + 
+  scale_y_log10(&#39;Log-variance abundance&#39;)</code></pre>
+<p><img src="README_files/figure-html/unnamed-chunk-3.png" width="60%" style="display: block; margin: auto;" /></p>
+<pre class="r"><code># get multivariate homogeneity of groups
+bdisper &lt;- betadisper(abudist, grps)
+
+# test if one or more groups is more variable than the others
+# variance between group is not homogenous
+permutest(bdisper)</code></pre>
+<pre><code>## 
+## Permutation test for homogeneity of multivariate dispersions
+## Permutation: free
+## Number of permutations: 999
+## 
+## Response: Distances
+##            Df Sum Sq Mean Sq      F N.Perm Pr(&gt;F)    
+## Groups      3 2.0485 0.68283 36.375    999  0.001 ***
+## Residuals 235 4.4114 0.01877                         
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<pre class="r"><code># multivariate abundance
+abund &lt;- d1 %&gt;% 
+  select(Carp, Bullhead) %&gt;% 
+  mvabund
+
+# test for group (location) effecgt
+mod &lt;- manyglm(abund ~ grps, family = &#39;negative.binomial&#39;)
+anova(mod)</code></pre>
+<pre><code>## Time elapsed: 0 hr 0 min 7 sec</code></pre>
+<pre><code>## Analysis of Deviance Table
+## 
+## Model: manyglm(formula = abund ~ grps, family = &quot;negative.binomial&quot;)
+## 
+## Multivariate test:
+##             Res.Df Df.diff   Dev Pr(&gt;Dev)    
+## (Intercept)    258                           
+## grps           255       3 613.3    0.001 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## Arguments:
+##  Test statistics calculated assuming uncorrelated response (for faster computation) 
+##  P-value calculated using 999 resampling iterations via PIT-trap resampling (to account for correlation in testing).</code></pre>
+</div>
 
 
 

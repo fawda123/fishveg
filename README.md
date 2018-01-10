@@ -80,3 +80,118 @@ GP          SpeciesRichness   3.6 (3)        13.6      0 / 16
 
 <img src="README_files/figure-html/Fig3.png" width="60%" style="display: block; margin: auto;" />
 
+#### Between group differences
+
+
+```r
+library(vegan)
+library(tidyverse)
+library(mvabund)
+
+# prep data
+merged_2 <- read.csv("ignore/merged_2.csv")
+
+d <- merged_2[, c(
+  "S_rich", "common.carp_GN", "black.bullhead_TN", "bluegill_TN",
+  "secchim", "sdi", "phuman", "aream2", "shedaream2", "ecoreg", "depthm"
+)]
+names(d) <- c(
+  "SpeciesRichness", "Carp", "Bullhead", "Bluegill", "Secchi", "SI",
+  "Human", "Area", "ShedArea", "Ecoregion", "Depth"
+)
+levels(d$Ecoregion) <- c("Forest", "Plain")
+
+d <- within(d, {
+  Bullhead.cut <- cut(Bullhead, c(-Inf, 0, 0.5, 1, 2, 5, 10, 20, Inf))
+  Carp.cut <- cut(Carp, c(-Inf, 0, 0.5, 1, 2, 5, 10, 20, Inf))
+  Bullhead.plusMin <- Bullhead + min(Bullhead[Bullhead > 0])
+  Carp.plusMin <- Carp + min(Carp[Carp > 0])
+  Bluegill.plusMin <- Bluegill + min(Bluegill[Bluegill > 0])
+})
+d$AnyCarp <- ifelse(d$Carp > 1, "C", "NC") ## 1 is a value for Carp and bullhead when impact becomes visible
+d$AnyBullhead <- ifelse(d$Bullhead > 1, "B", "NB")
+d$Group <- factor(paste0(d$AnyCarp, "-", d$AnyBullhead))
+d$Group <- relevel(d$Group, "NC-NB")
+d1 <- subset(d, ShedArea < 100000000 & Area < 10000000)
+
+# get distance matrix of fish abundance
+abudist <- d1 %>% 
+  select(Carp, Bullhead) %>% 
+  vegdist
+
+# lake groups
+grps <- d1$Group
+
+# exploratory plot
+toplo <- d1 %>% 
+  select(Carp, Bullhead, Group) %>% 
+  gather('spp', 'abu', -Group) %>% 
+  group_by(Group, spp) %>% 
+  summarise(
+    ave = mean(abu, na.rm = T), 
+    vrc = var(abu, na.rm = T)
+  )
+
+ggplot(toplo, aes(x = ave, y = vrc, colour = spp, shape = Group)) + 
+  geom_point(size = 6) + 
+  theme_bw() + 
+  scale_x_log10('Log-mean abundance') + 
+  scale_y_log10('Log-variance abundance')
+```
+
+<img src="README_files/figure-html/unnamed-chunk-3.png" width="60%" style="display: block; margin: auto;" />
+
+```r
+# get multivariate homogeneity of groups
+bdisper <- betadisper(abudist, grps)
+
+# test if one or more groups is more variable than the others
+# variance between group is not homogenous
+permutest(bdisper)
+```
+
+```
+## 
+## Permutation test for homogeneity of multivariate dispersions
+## Permutation: free
+## Number of permutations: 999
+## 
+## Response: Distances
+##            Df Sum Sq Mean Sq      F N.Perm Pr(>F)    
+## Groups      3 2.0485 0.68283 36.375    999  0.001 ***
+## Residuals 235 4.4114 0.01877                         
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+```
+
+```r
+# multivariate abundance
+abund <- d1 %>% 
+  select(Carp, Bullhead) %>% 
+  mvabund
+
+# test for group (location) effecgt
+mod <- manyglm(abund ~ grps, family = 'negative.binomial')
+anova(mod)
+```
+
+```
+## Time elapsed: 0 hr 0 min 7 sec
+```
+
+```
+## Analysis of Deviance Table
+## 
+## Model: manyglm(formula = abund ~ grps, family = "negative.binomial")
+## 
+## Multivariate test:
+##             Res.Df Df.diff   Dev Pr(>Dev)    
+## (Intercept)    258                           
+## grps           255       3 613.3    0.001 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## Arguments:
+##  Test statistics calculated assuming uncorrelated response (for faster computation) 
+##  P-value calculated using 999 resampling iterations via PIT-trap resampling (to account for correlation in testing).
+```
+
