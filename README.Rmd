@@ -381,16 +381,7 @@ efagrp <- vargrp %>%
   mutate(
     efa = map(data, function(x){
   
-      p <- 0; f <- 1
-      while(p < 0.05 & f < 4){
-        
-        out <- factanal(x, factors = f, rotation = 'varimax')
-        p <- out$PVAL
-        f <- f + 1
-        
-      }
-        
-      return(out)
+      factanal(x, factors = 3, rotation = 'varimax')
       
     })
   ) %>% 
