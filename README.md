@@ -105,11 +105,11 @@ levels(d$Ecoregion) <- c("Forest", "Plain")
 
 d <- d %>% 
   mutate(
-    carp_cat = cut(Carp, c(-Inf, quantile(Carp, c(0.25, 0.75)), Inf), labels = c('lo', 'md', 'hi')), 
-    bull_cat = cut(Bullhead, c(-Inf, quantile(Bullhead, c(0.25, 0.75)), Inf), labels = c('lo', 'md', 'hi'))
+    carp_cat = cut(Carp, c(-Inf, quantile(Carp, c(0.25, 0.75)), Inf), labels = paste0('C_', c('lo', 'md', 'hi'))), 
+    bull_cat = cut(Bullhead, c(-Inf, quantile(Bullhead, c(0.25, 0.75)), Inf), labels = paste0('B_', c('lo', 'md', 'hi')))
   ) %>% 
-  unite('Group', carp_cat, bull_cat) %>% 
-  filter(Group %in% c('lo_lo', 'hi_hi'))
+  unite('Group', carp_cat, bull_cat, sep = ', ') %>% 
+  filter(!grepl('md', Group))
 
 # lake groups
 grps <- d$Group
@@ -137,7 +137,7 @@ efagrp
 ```
 
 ```
-## $lo_lo
+## $`C_lo, B_lo`
 ## 
 ## Call:
 ## factanal(x = x, factors = 3, rotation = "varimax")
@@ -165,7 +165,35 @@ efagrp
 ## The chi square statistic is 0.46 on 3 degrees of freedom.
 ## The p-value is 0.928 
 ## 
-## $hi_hi
+## $`C_hi, B_lo`
+## 
+## Call:
+## factanal(x = x, factors = 3, rotation = "varimax")
+## 
+## Uniquenesses:
+##    Depth   Secchi     Area       SI ShedArea    Human Bluegill 
+##    0.005    0.090    0.544    0.250    0.005    0.548    0.005 
+## 
+## Loadings:
+##          Factor1 Factor2 Factor3
+## Depth     0.149   0.982         
+## Secchi   -0.299   0.905         
+## Area      0.656           0.129 
+## SI        0.779  -0.245   0.290 
+## ShedArea                  0.994 
+## Human     0.209           0.638 
+## Bluegill  0.976   0.178  -0.105 
+## 
+##                Factor1 Factor2 Factor3
+## SS loadings      2.146   1.891   1.517
+## Proportion Var   0.307   0.270   0.217
+## Cumulative Var   0.307   0.577   0.793
+## 
+## Test of the hypothesis that 3 factors are sufficient.
+## The chi square statistic is 8.38 on 3 degrees of freedom.
+## The p-value is 0.0387 
+## 
+## $`C_hi, B_hi`
 ## 
 ## Call:
 ## factanal(x = x, factors = 3, rotation = "varimax")
@@ -191,6 +219,34 @@ efagrp
 ## 
 ## Test of the hypothesis that 3 factors are sufficient.
 ## The chi square statistic is 0.21 on 3 degrees of freedom.
-## The p-value is 0.976
+## The p-value is 0.976 
+## 
+## $`C_lo, B_hi`
+## 
+## Call:
+## factanal(x = x, factors = 3, rotation = "varimax")
+## 
+## Uniquenesses:
+##    Depth   Secchi     Area       SI ShedArea    Human Bluegill 
+##    0.738    0.005    0.519    0.005    0.296    0.005    0.767 
+## 
+## Loadings:
+##          Factor1 Factor2 Factor3
+## Depth    -0.419   0.271  -0.114 
+## Secchi    0.186   0.971  -0.130 
+## Area      0.142           0.676 
+## SI        0.743           0.663 
+## ShedArea  0.807           0.216 
+## Human     0.375  -0.720  -0.579 
+## Bluegill -0.481                 
+## 
+##                Factor1 Factor2 Factor3
+## SS loadings      1.805   1.551   1.309
+## Proportion Var   0.258   0.222   0.187
+## Cumulative Var   0.258   0.479   0.666
+## 
+## Test of the hypothesis that 3 factors are sufficient.
+## The chi square statistic is 2.44 on 3 degrees of freedom.
+## The p-value is 0.486
 ```
 

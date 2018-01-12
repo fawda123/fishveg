@@ -300,11 +300,11 @@ levels(d$Ecoregion) <- c("Forest", "Plain")
 
 d <- d %>% 
   mutate(
-    carp_cat = cut(Carp, c(-Inf, quantile(Carp, c(0.25, 0.75)), Inf), labels = c('lo', 'md', 'hi')), 
-    bull_cat = cut(Bullhead, c(-Inf, quantile(Bullhead, c(0.25, 0.75)), Inf), labels = c('lo', 'md', 'hi'))
+    carp_cat = cut(Carp, c(-Inf, quantile(Carp, c(0.25, 0.75)), Inf), labels = paste0('C_', c('lo', 'md', 'hi'))), 
+    bull_cat = cut(Bullhead, c(-Inf, quantile(Bullhead, c(0.25, 0.75)), Inf), labels = paste0('B_', c('lo', 'md', 'hi')))
   ) %>% 
-  unite('Group', carp_cat, bull_cat) %>% 
-  filter(Group %in% c('lo_lo', 'hi_hi'))
+  unite('Group', carp_cat, bull_cat, sep = ', ') %>% 
+  filter(!grepl('md', Group))
 
 ppp <- princomp(d[,c( "Depth", "Secchi", "Area", "SI", "ShedArea", "Human", "Bluegill")], cor=TRUE)
 
@@ -315,10 +315,10 @@ mythm <- theme_bw(base_family = 'serif') +
   plot.margin = margin(0, 2, 0, 2, "pt")
 ) 
 
-p1 <- ggord(ppp, grp_in = d$Group, vec_ext = 7, facet = T, nfac = 4, alpha = 0.8, size = 2, txt = 2, arrow = 0.2) + 
+p1 <- ggord(ppp, grp_in = d$Group, vec_ext = 5, facet = T, nfac = 4, alpha = 0.8, size = 2, txt = 2, arrow = 0.2) + 
   mythm
 
-p2 <- ggord(ppp, axes = c(3, 4), grp_in = d$Group, vec_ext = 7, facet = T, nfac = 4, alpha = 0.8, size = 2, arrow = 0.2, txt = 2) + 
+p2 <- ggord(ppp, axes = c(3, 4), grp_in = d$Group, vec_ext = 5, facet = T, nfac = 4, alpha = 0.8, size = 2, arrow = 0.2, txt = 2) + 
   mythm
 
 # tiff('fig3.tif', height = 5, width = 7.5, units = 'in', compression = 'lzw', res = 300, family = 'serif')
@@ -349,11 +349,11 @@ levels(d$Ecoregion) <- c("Forest", "Plain")
 
 d <- d %>% 
   mutate(
-    carp_cat = cut(Carp, c(-Inf, quantile(Carp, c(0.25, 0.75)), Inf), labels = c('lo', 'md', 'hi')), 
-    bull_cat = cut(Bullhead, c(-Inf, quantile(Bullhead, c(0.25, 0.75)), Inf), labels = c('lo', 'md', 'hi'))
+    carp_cat = cut(Carp, c(-Inf, quantile(Carp, c(0.25, 0.75)), Inf), labels = paste0('C_', c('lo', 'md', 'hi'))), 
+    bull_cat = cut(Bullhead, c(-Inf, quantile(Bullhead, c(0.25, 0.75)), Inf), labels = paste0('B_', c('lo', 'md', 'hi')))
   ) %>% 
-  unite('Group', carp_cat, bull_cat) %>% 
-  filter(Group %in% c('lo_lo', 'hi_hi'))
+  unite('Group', carp_cat, bull_cat, sep = ', ') %>% 
+  filter(!grepl('md', Group))
 
 # lake groups
 grps <- d$Group
