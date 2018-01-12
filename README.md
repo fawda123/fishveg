@@ -103,24 +103,19 @@ names(d) <- c(
 )
 levels(d$Ecoregion) <- c("Forest", "Plain")
 
-d <- within(d, {
-  Bullhead.cut <- cut(Bullhead, c(-Inf, 0, 0.5, 1, 2, 5, 10, 20, Inf))
-  Carp.cut <- cut(Carp, c(-Inf, 0, 0.5, 1, 2, 5, 10, 20, Inf))
-  Bullhead.plusMin <- Bullhead + min(Bullhead[Bullhead > 0])
-  Carp.plusMin <- Carp + min(Carp[Carp > 0])
-  Bluegill.plusMin <- Bluegill + min(Bluegill[Bluegill > 0])
-})
-d$AnyCarp <- ifelse(d$Carp > 0, "C", "NC") ## 1 is a value for Carp and bullhead when impact becomes visible
-d$AnyBullhead <- ifelse(d$Bullhead > 0, "B", "NB")
-d$Group <- factor(paste0(d$AnyCarp, "-", d$AnyBullhead))
-d$Group <- relevel(d$Group, "NC-NB")
-d1 <- subset(d, ShedArea < 100000000 & Area < 10000000)
+d <- d %>% 
+  mutate(
+    carp_cat = cut(Carp, c(-Inf, quantile(Carp, c(0.25, 0.75)), Inf), labels = c('lo', 'md', 'hi')), 
+    bull_cat = cut(Bullhead, c(-Inf, quantile(Bullhead, c(0.25, 0.75)), Inf), labels = c('lo', 'md', 'hi'))
+  ) %>% 
+  unite('Group', carp_cat, bull_cat) %>% 
+  filter(Group %in% c('lo_lo', 'hi_hi'))
 
 # lake groups
-grps <- d1$Group
+grps <- d$Group
 
 # standardized variables with lake groups
-vargrp <-  d1 %>% 
+vargrp <-  d %>% 
   select(Depth, Secchi, Area, SI, ShedArea, Human, Bluegill) %>% 
   decostand(method = 'standardize') %>% 
   mutate(Group = grps)
@@ -142,116 +137,60 @@ efagrp
 ```
 
 ```
-## $`C-B`
+## $lo_lo
 ## 
 ## Call:
 ## factanal(x = x, factors = 3, rotation = "varimax")
 ## 
 ## Uniquenesses:
 ##    Depth   Secchi     Area       SI ShedArea    Human Bluegill 
-##    0.366    0.229    0.265    0.517    0.491    0.005    0.841 
+##    0.005    0.771    0.414    0.095    0.775    0.005    0.924 
 ## 
 ## Loadings:
 ##          Factor1 Factor2 Factor3
-## Depth     0.149   0.781         
-## Secchi            0.841  -0.248 
-## Area      0.853                 
-## SI        0.694                 
-## ShedArea  0.616           0.357 
-## Human            -0.159   0.983 
-## Bluegill          0.394         
+## Depth     0.759   0.402   0.506 
+## Secchi    0.448           0.164 
+## Area      0.750  -0.129         
+## SI        0.851  -0.150  -0.398 
+## ShedArea         -0.448  -0.137 
+## Human             0.929  -0.359 
+## Bluegill                  0.273 
 ## 
 ##                Factor1 Factor2 Factor3
-## SS loadings      1.620   1.508   1.159
-## Proportion Var   0.231   0.215   0.166
-## Cumulative Var   0.231   0.447   0.612
+## SS loadings      2.074   1.266   0.670
+## Proportion Var   0.296   0.181   0.096
+## Cumulative Var   0.296   0.477   0.573
 ## 
 ## Test of the hypothesis that 3 factors are sufficient.
-## The chi square statistic is 14.97 on 3 degrees of freedom.
-## The p-value is 0.00184 
+## The chi square statistic is 0.46 on 3 degrees of freedom.
+## The p-value is 0.928 
 ## 
-## $`NC-B`
+## $hi_hi
 ## 
 ## Call:
 ## factanal(x = x, factors = 3, rotation = "varimax")
 ## 
 ## Uniquenesses:
 ##    Depth   Secchi     Area       SI ShedArea    Human Bluegill 
-##    0.620    0.005    0.278    0.570    0.693    0.804    0.005 
+##    0.099    0.633    0.005    0.839    0.515    0.005    0.637 
 ## 
 ## Loadings:
 ##          Factor1 Factor2 Factor3
-## Depth     0.223   0.574         
-## Secchi            0.994         
-## Area      0.840   0.119         
-## SI        0.617   0.219         
-## ShedArea  0.537          -0.136 
-## Human    -0.334  -0.266  -0.117 
-## Bluegill                  0.994 
+## Depth     0.948                 
+## Secchi    0.563   0.158  -0.159 
+## Area              0.973  -0.216 
+## SI       -0.205   0.324  -0.120 
+## ShedArea  0.126   0.650   0.216 
+## Human                     0.995 
+## Bluegill  0.535  -0.244   0.129 
 ## 
 ##                Factor1 Factor2 Factor3
-## SS loadings       1.54   1.454   1.031
-## Proportion Var    0.22   0.208   0.147
-## Cumulative Var    0.22   0.428   0.575
+## SS loadings      1.566   1.562   1.139
+## Proportion Var   0.224   0.223   0.163
+## Cumulative Var   0.224   0.447   0.610
 ## 
 ## Test of the hypothesis that 3 factors are sufficient.
-## The chi square statistic is 3.9 on 3 degrees of freedom.
-## The p-value is 0.273 
-## 
-## $`C-NB`
-## 
-## Call:
-## factanal(x = x, factors = 3, rotation = "varimax")
-## 
-## Uniquenesses:
-##    Depth   Secchi     Area       SI ShedArea    Human Bluegill 
-##    0.005    0.748    0.267    0.490    0.198    0.653    0.598 
-## 
-## Loadings:
-##          Factor1 Factor2 Factor3
-## Depth             0.932   0.342 
-## Secchi   -0.179   0.462         
-## Area      0.844  -0.123         
-## SI        0.690  -0.122   0.139 
-## ShedArea  0.894                 
-## Human     0.174   0.103   0.554 
-## Bluegill -0.163           0.613 
-## 
-##                Factor1 Factor2 Factor3
-## SS loadings      2.084   1.124   0.834
-## Proportion Var   0.298   0.161   0.119
-## Cumulative Var   0.298   0.458   0.577
-## 
-## Test of the hypothesis that 3 factors are sufficient.
-## The chi square statistic is 2.06 on 3 degrees of freedom.
-## The p-value is 0.56 
-## 
-## $`NC-NB`
-## 
-## Call:
-## factanal(x = x, factors = 3, rotation = "varimax")
-## 
-## Uniquenesses:
-##    Depth   Secchi     Area       SI ShedArea    Human Bluegill 
-##    0.175    0.005    0.249    0.308    0.832    0.418    0.478 
-## 
-## Loadings:
-##          Factor1 Factor2 Factor3
-## Depth     0.738   0.462  -0.259 
-## Secchi            0.988   0.106 
-## Area      0.804           0.323 
-## SI        0.427   0.424   0.575 
-## ShedArea          0.176   0.370 
-## Human             0.170  -0.740 
-## Bluegill  0.721                 
-## 
-##                Factor1 Factor2 Factor3
-## SS loadings      1.907   1.430   1.198
-## Proportion Var   0.272   0.204   0.171
-## Cumulative Var   0.272   0.477   0.648
-## 
-## Test of the hypothesis that 3 factors are sufficient.
-## The chi square statistic is 1.44 on 3 degrees of freedom.
-## The p-value is 0.696
+## The chi square statistic is 0.21 on 3 degrees of freedom.
+## The p-value is 0.976
 ```
 

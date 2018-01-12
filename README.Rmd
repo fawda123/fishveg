@@ -298,20 +298,15 @@ names(d) <- c(
 )
 levels(d$Ecoregion) <- c("Forest", "Plain")
 
-d <- within(d, {
-  Bullhead.cut <- cut(Bullhead, c(-Inf, 0, 0.5, 1, 2, 5, 10, 20, Inf))
-  Carp.cut <- cut(Carp, c(-Inf, 0, 0.5, 1, 2, 5, 10, 20, Inf))
-  Bullhead.plusMin <- Bullhead + min(Bullhead[Bullhead > 0])
-  Carp.plusMin <- Carp + min(Carp[Carp > 0])
-  Bluegill.plusMin <- Bluegill + min(Bluegill[Bluegill > 0])
-})
-d$AnyCarp <- ifelse(d$Carp > 0, "C", "NC") ## 1 is a value for Carp and bullhead when impact becomes visible
-d$AnyBullhead <- ifelse(d$Bullhead > 0, "B", "NB")
-d$Group <- factor(paste0(d$AnyCarp, "-", d$AnyBullhead))
-d$Group <- relevel(d$Group, "NC-NB")
-d1 <- subset(d, ShedArea < 100000000 & Area < 10000000)
+d <- d %>% 
+  mutate(
+    carp_cat = cut(Carp, c(-Inf, quantile(Carp, c(0.25, 0.75)), Inf), labels = c('lo', 'md', 'hi')), 
+    bull_cat = cut(Bullhead, c(-Inf, quantile(Bullhead, c(0.25, 0.75)), Inf), labels = c('lo', 'md', 'hi'))
+  ) %>% 
+  unite('Group', carp_cat, bull_cat) %>% 
+  filter(Group %in% c('lo_lo', 'hi_hi'))
 
-ppp <- princomp(d1[,c( "Depth", "Secchi", "Area", "SI", "ShedArea", "Human", "Bluegill")], cor=TRUE)
+ppp <- princomp(d[,c( "Depth", "Secchi", "Area", "SI", "ShedArea", "Human", "Bluegill")], cor=TRUE)
 
 mythm <- theme_bw(base_family = 'serif') +
   theme(
@@ -320,10 +315,10 @@ mythm <- theme_bw(base_family = 'serif') +
   plot.margin = margin(0, 2, 0, 2, "pt")
 ) 
 
-p1 <- ggord(ppp, grp_in = d1$Group, vec_ext = 7, facet = T, nfac = 4, alpha = 0.8, size = 2, txt = 2, arrow = 0.2) + 
+p1 <- ggord(ppp, grp_in = d$Group, vec_ext = 7, facet = T, nfac = 4, alpha = 0.8, size = 2, txt = 2, arrow = 0.2) + 
   mythm
 
-p2 <- ggord(ppp, axes = c(3, 4), grp_in = d1$Group, vec_ext = 7, facet = T, nfac = 4, alpha = 0.8, size = 2, arrow = 0.2, txt = 2) + 
+p2 <- ggord(ppp, axes = c(3, 4), grp_in = d$Group, vec_ext = 7, facet = T, nfac = 4, alpha = 0.8, size = 2, arrow = 0.2, txt = 2) + 
   mythm
 
 # tiff('fig3.tif', height = 5, width = 7.5, units = 'in', compression = 'lzw', res = 300, family = 'serif')
@@ -352,24 +347,19 @@ names(d) <- c(
 )
 levels(d$Ecoregion) <- c("Forest", "Plain")
 
-d <- within(d, {
-  Bullhead.cut <- cut(Bullhead, c(-Inf, 0, 0.5, 1, 2, 5, 10, 20, Inf))
-  Carp.cut <- cut(Carp, c(-Inf, 0, 0.5, 1, 2, 5, 10, 20, Inf))
-  Bullhead.plusMin <- Bullhead + min(Bullhead[Bullhead > 0])
-  Carp.plusMin <- Carp + min(Carp[Carp > 0])
-  Bluegill.plusMin <- Bluegill + min(Bluegill[Bluegill > 0])
-})
-d$AnyCarp <- ifelse(d$Carp > 0, "C", "NC") ## 1 is a value for Carp and bullhead when impact becomes visible
-d$AnyBullhead <- ifelse(d$Bullhead > 0, "B", "NB")
-d$Group <- factor(paste0(d$AnyCarp, "-", d$AnyBullhead))
-d$Group <- relevel(d$Group, "NC-NB")
-d1 <- subset(d, ShedArea < 100000000 & Area < 10000000)
+d <- d %>% 
+  mutate(
+    carp_cat = cut(Carp, c(-Inf, quantile(Carp, c(0.25, 0.75)), Inf), labels = c('lo', 'md', 'hi')), 
+    bull_cat = cut(Bullhead, c(-Inf, quantile(Bullhead, c(0.25, 0.75)), Inf), labels = c('lo', 'md', 'hi'))
+  ) %>% 
+  unite('Group', carp_cat, bull_cat) %>% 
+  filter(Group %in% c('lo_lo', 'hi_hi'))
 
 # lake groups
-grps <- d1$Group
+grps <- d$Group
 
 # standardized variables with lake groups
-vargrp <-  d1 %>% 
+vargrp <-  d %>% 
   select(Depth, Secchi, Area, SI, ShedArea, Human, Bluegill) %>% 
   decostand(method = 'standardize') %>% 
   mutate(Group = grps)
