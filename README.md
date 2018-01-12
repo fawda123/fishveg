@@ -79,174 +79,40 @@ GP          SpeciesRichness   3.6 (3)        13.6      0 / 16
 
 <img src="README_files/figure-html/Fig2.png" width="60%" style="display: block; margin: auto;" />
 
+
+```
+## $Dim.1
+## $Dim.1$quanti
+##          correlation      p.value
+## Secchi     0.7526129 2.206610e-18
+## Depth      0.6664144 2.285964e-13
+## Area       0.6578217 5.878257e-13
+## SI         0.6411719 3.367948e-12
+## ShedArea   0.4188108 2.657264e-05
+## Human     -0.4970077 3.479509e-07
+## 
+## 
+## $Dim.2
+## $Dim.2$quanti
+##          correlation      p.value
+## SI         0.5575659 5.301907e-09
+## Area       0.4310596 1.443179e-05
+## Human      0.3063802 2.670696e-03
+## Secchi    -0.3430016 7.135681e-04
+## Depth     -0.3525522 4.921600e-04
+## Bluegill  -0.6854460 2.515849e-14
+## 
+## 
+## $Dim.3
+## $Dim.3$quanti
+##          correlation      p.value
+## Human      0.5586744 4.872119e-09
+## Depth      0.4665654 2.139301e-06
+## Area       0.2239698 3.000222e-02
+## ShedArea  -0.7298581 7.134646e-17
+```
+
 <img src="README_files/figure-html/Fig3.png" width="60%" style="display: block; margin: auto;" />
 
-#### Between group differences
-
-Using exploratory factor analysis... 
-
-
-```r
-library(vegan)
-library(tidyverse)
-
-# prep data
-merged_2 <- read.csv("ignore/merged_2.csv")
-
-d <- merged_2[, c(
-  "S_rich", "common.carp_GN", "black.bullhead_TN", "bluegill_TN",
-  "secchim", "sdi", "phuman", "aream2", "shedaream2", "ecoreg", "depthm"
-)]
-names(d) <- c(
-  "SpeciesRichness", "Carp", "Bullhead", "Bluegill", "Secchi", "SI",
-  "Human", "Area", "ShedArea", "Ecoregion", "Depth"
-)
-levels(d$Ecoregion) <- c("Forest", "Plain")
-
-d <- d %>% 
-  mutate(
-    carp_cat = cut(Carp, c(-Inf, quantile(Carp, c(0.25, 0.75)), Inf), labels = paste0('C_', c('lo', 'md', 'hi'))), 
-    bull_cat = cut(Bullhead, c(-Inf, quantile(Bullhead, c(0.25, 0.75)), Inf), labels = paste0('B_', c('lo', 'md', 'hi')))
-  ) %>% 
-  unite('Group', carp_cat, bull_cat, sep = ', ') %>% 
-  filter(!grepl('md', Group))
-
-# lake groups
-grps <- d$Group
-
-# standardized variables with lake groups
-vargrp <-  d %>% 
-  select(Depth, Secchi, Area, SI, ShedArea, Human, Bluegill) %>% 
-  decostand(method = 'standardize') %>% 
-  mutate(Group = grps)
-
-# factor analysis
-efagrp <- vargrp %>% 
-  group_by(Group) %>% 
-  nest %>% 
-  mutate(
-    efa = map(data, function(x){
-  
-      factanal(x, factors = 3, rotation = 'varimax')
-      
-    })
-  ) %>% 
-  select(-data) %>% 
-  deframe
-efagrp
-```
-
-```
-## $`C_lo, B_lo`
-## 
-## Call:
-## factanal(x = x, factors = 3, rotation = "varimax")
-## 
-## Uniquenesses:
-##    Depth   Secchi     Area       SI ShedArea    Human Bluegill 
-##    0.005    0.771    0.414    0.095    0.775    0.005    0.924 
-## 
-## Loadings:
-##          Factor1 Factor2 Factor3
-## Depth     0.759   0.402   0.506 
-## Secchi    0.448           0.164 
-## Area      0.750  -0.129         
-## SI        0.851  -0.150  -0.398 
-## ShedArea         -0.448  -0.137 
-## Human             0.929  -0.359 
-## Bluegill                  0.273 
-## 
-##                Factor1 Factor2 Factor3
-## SS loadings      2.074   1.266   0.670
-## Proportion Var   0.296   0.181   0.096
-## Cumulative Var   0.296   0.477   0.573
-## 
-## Test of the hypothesis that 3 factors are sufficient.
-## The chi square statistic is 0.46 on 3 degrees of freedom.
-## The p-value is 0.928 
-## 
-## $`C_hi, B_lo`
-## 
-## Call:
-## factanal(x = x, factors = 3, rotation = "varimax")
-## 
-## Uniquenesses:
-##    Depth   Secchi     Area       SI ShedArea    Human Bluegill 
-##    0.005    0.090    0.544    0.250    0.005    0.548    0.005 
-## 
-## Loadings:
-##          Factor1 Factor2 Factor3
-## Depth     0.149   0.982         
-## Secchi   -0.299   0.905         
-## Area      0.656           0.129 
-## SI        0.779  -0.245   0.290 
-## ShedArea                  0.994 
-## Human     0.209           0.638 
-## Bluegill  0.976   0.178  -0.105 
-## 
-##                Factor1 Factor2 Factor3
-## SS loadings      2.146   1.891   1.517
-## Proportion Var   0.307   0.270   0.217
-## Cumulative Var   0.307   0.577   0.793
-## 
-## Test of the hypothesis that 3 factors are sufficient.
-## The chi square statistic is 8.38 on 3 degrees of freedom.
-## The p-value is 0.0387 
-## 
-## $`C_hi, B_hi`
-## 
-## Call:
-## factanal(x = x, factors = 3, rotation = "varimax")
-## 
-## Uniquenesses:
-##    Depth   Secchi     Area       SI ShedArea    Human Bluegill 
-##    0.099    0.633    0.005    0.839    0.515    0.005    0.637 
-## 
-## Loadings:
-##          Factor1 Factor2 Factor3
-## Depth     0.948                 
-## Secchi    0.563   0.158  -0.159 
-## Area              0.973  -0.216 
-## SI       -0.205   0.324  -0.120 
-## ShedArea  0.126   0.650   0.216 
-## Human                     0.995 
-## Bluegill  0.535  -0.244   0.129 
-## 
-##                Factor1 Factor2 Factor3
-## SS loadings      1.566   1.562   1.139
-## Proportion Var   0.224   0.223   0.163
-## Cumulative Var   0.224   0.447   0.610
-## 
-## Test of the hypothesis that 3 factors are sufficient.
-## The chi square statistic is 0.21 on 3 degrees of freedom.
-## The p-value is 0.976 
-## 
-## $`C_lo, B_hi`
-## 
-## Call:
-## factanal(x = x, factors = 3, rotation = "varimax")
-## 
-## Uniquenesses:
-##    Depth   Secchi     Area       SI ShedArea    Human Bluegill 
-##    0.738    0.005    0.519    0.005    0.296    0.005    0.767 
-## 
-## Loadings:
-##          Factor1 Factor2 Factor3
-## Depth    -0.419   0.271  -0.114 
-## Secchi    0.186   0.971  -0.130 
-## Area      0.142           0.676 
-## SI        0.743           0.663 
-## ShedArea  0.807           0.216 
-## Human     0.375  -0.720  -0.579 
-## Bluegill -0.481                 
-## 
-##                Factor1 Factor2 Factor3
-## SS loadings      1.805   1.551   1.309
-## Proportion Var   0.258   0.222   0.187
-## Cumulative Var   0.258   0.479   0.666
-## 
-## Test of the hypothesis that 3 factors are sufficient.
-## The chi square statistic is 2.44 on 3 degrees of freedom.
-## The p-value is 0.486
-```
+<img src="README_files/figure-html/FigS1.png" width="60%" style="display: block; margin: auto;" />
 

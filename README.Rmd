@@ -21,6 +21,7 @@ library(ggsn)
 library(knitr)
 library(ggord)
 library(gridExtra)
+library(FactoMineR)
 source('R/funcs.R')
 
 opts_chunk$set(fig.align = 'center', message = F, echo = F, cache = F, dev = 'png', dev.args = list(family = 'serif'), dpi = 400, fig.pos = '!h', warning = F, background = 'white', out.width = '60%',
@@ -285,7 +286,7 @@ p3
 # dev.off()
 ```
 
-```{r Fig3, fig.height = 5, fig.width =7.5}
+```{r Fig3, fig.height = 3.5, fig.width = 7}
 merged_2 <- read.csv("ignore/merged_2.csv")
 
 d <- merged_2[, c(
@@ -300,13 +301,17 @@ levels(d$Ecoregion) <- c("Forest", "Plain")
 
 d <- d %>% 
   mutate(
-    carp_cat = cut(Carp, c(-Inf, quantile(Carp, c(0.25, 0.75)), Inf), labels = paste0('C_', c('lo', 'md', 'hi'))), 
-    bull_cat = cut(Bullhead, c(-Inf, quantile(Bullhead, c(0.25, 0.75)), Inf), labels = paste0('B_', c('lo', 'md', 'hi')))
+    carp_cat = cut(Carp, c(-Inf, quantile(Carp, c(0.25, 0.75)), Inf), labels = paste0('C ', c('lo', 'md', 'hi'))), 
+    bull_cat = cut(Bullhead, c(-Inf, quantile(Bullhead, c(0.25, 0.75)), Inf), labels = paste0('B ', c('lo', 'md', 'hi')))
   ) %>% 
   unite('Group', carp_cat, bull_cat, sep = ', ') %>% 
   filter(!grepl('md', Group))
 
-ppp <- princomp(d[,c( "Depth", "Secchi", "Area", "SI", "ShedArea", "Human", "Bluegill")], cor=TRUE)
+tomod <-  d %>% 
+  select(Depth, Secchi, Area, SI, ShedArea, Human, Bluegill) %>% 
+  decostand(method = 'standardize')
+ppp <- PCA(tomod, scale.unit = F, graph = F)
+dimdesc(ppp, axes = c(1:3))
 
 mythm <- theme_bw(base_family = 'serif') +
   theme(
@@ -318,65 +323,42 @@ mythm <- theme_bw(base_family = 'serif') +
 p1 <- ggord(ppp, grp_in = d$Group, vec_ext = 5, facet = T, nfac = 4, alpha = 0.8, size = 2, txt = 2, arrow = 0.2) + 
   mythm
 
-p2 <- ggord(ppp, axes = c(3, 4), grp_in = d$Group, vec_ext = 5, facet = T, nfac = 4, alpha = 0.8, size = 2, arrow = 0.2, txt = 2) + 
-  mythm
-
-# tiff('fig3.tif', height = 5, width = 7.5, units = 'in', compression = 'lzw', res = 300, family = 'serif')
-grid.arrange(p1, p2, ncol = 1)
+# tiff('fig3.tif', height = 5, width = 4, units = 'in', compression = 'lzw', res = 300, family = 'serif')
+p1
 # dev.off()
 ```
 
-#### Between group differences
+```{r FigS1, fig.height = 6, fig.width = 6}
 
-Using exploratory factor analysis... 
+sums <- d %>% 
+  select(Depth, Secchi, Area, SI, ShedArea, Human, Bluegill, Group) %>% 
+  gather('var', 'val', -Group)
 
-```{r, fig.height = 4, fig.width = 5, echo = T}
-library(vegan)
-library(tidyverse)
-
-# prep data
-merged_2 <- read.csv("ignore/merged_2.csv")
-
-d <- merged_2[, c(
-  "S_rich", "common.carp_GN", "black.bullhead_TN", "bluegill_TN",
-  "secchim", "sdi", "phuman", "aream2", "shedaream2", "ecoreg", "depthm"
-)]
-names(d) <- c(
-  "SpeciesRichness", "Carp", "Bullhead", "Bluegill", "Secchi", "SI",
-  "Human", "Area", "ShedArea", "Ecoregion", "Depth"
-)
-levels(d$Ecoregion) <- c("Forest", "Plain")
-
-d <- d %>% 
-  mutate(
-    carp_cat = cut(Carp, c(-Inf, quantile(Carp, c(0.25, 0.75)), Inf), labels = paste0('C_', c('lo', 'md', 'hi'))), 
-    bull_cat = cut(Bullhead, c(-Inf, quantile(Bullhead, c(0.25, 0.75)), Inf), labels = paste0('B_', c('lo', 'md', 'hi')))
-  ) %>% 
-  unite('Group', carp_cat, bull_cat, sep = ', ') %>% 
-  filter(!grepl('md', Group))
-
-# lake groups
-grps <- d$Group
-
-# standardized variables with lake groups
-vargrp <-  d %>% 
-  select(Depth, Secchi, Area, SI, ShedArea, Human, Bluegill) %>% 
-  decostand(method = 'standardize') %>% 
-  mutate(Group = grps)
-
-# factor analysis
-efagrp <- vargrp %>% 
-  group_by(Group) %>% 
-  nest %>% 
-  mutate(
-    efa = map(data, function(x){
+for(vr in seq_along(unique(sums$var))){
   
-      factanal(x, factors = 3, rotation = 'varimax')
-      
-    })
-  ) %>% 
-  select(-data) %>% 
-  deframe
-efagrp
+  gt <- unique(sums$var)[vr]
+  
+  toplo <- sums %>% 
+    filter(var %in% gt)
+  
+  p <- ggplot(toplo, aes(x = Group, y = val)) + 
+    geom_boxplot() + 
+    theme_bw() +
+    theme(strip.background = element_blank(), axis.title.x = element_blank())
+  
+  if(!gt %in% 'Human')
+    p <- p + scale_y_log10(gt)
+  else 
+    p <- p + scale_y_continuous(gt)
+  
+  assign(paste0('p', vr), p)
+
+
+}
+
+grid.arrange(
+  arrangeGrob(p1, p2, p3, p4, p5, p6, p7, ncol = 2)
+)
+
 ```
 
