@@ -83,11 +83,12 @@ GP          SpeciesRichness   3.6 (3)        13.6      0 / 16
 
 #### Between group differences
 
+Using exploratory factor analysis... 
+
 
 ```r
 library(vegan)
 library(tidyverse)
-library(mvabund)
 
 # prep data
 merged_2 <- read.csv("ignore/merged_2.csv")
@@ -109,90 +110,155 @@ d <- within(d, {
   Carp.plusMin <- Carp + min(Carp[Carp > 0])
   Bluegill.plusMin <- Bluegill + min(Bluegill[Bluegill > 0])
 })
-d$AnyCarp <- ifelse(d$Carp > 1, "C", "NC") ## 1 is a value for Carp and bullhead when impact becomes visible
-d$AnyBullhead <- ifelse(d$Bullhead > 1, "B", "NB")
+d$AnyCarp <- ifelse(d$Carp > 0, "C", "NC") ## 1 is a value for Carp and bullhead when impact becomes visible
+d$AnyBullhead <- ifelse(d$Bullhead > 0, "B", "NB")
 d$Group <- factor(paste0(d$AnyCarp, "-", d$AnyBullhead))
 d$Group <- relevel(d$Group, "NC-NB")
 d1 <- subset(d, ShedArea < 100000000 & Area < 10000000)
 
-# get distance matrix of fish abundance
-abudist <- d1 %>% 
-  select(Carp, Bullhead) %>% 
-  vegdist
-
 # lake groups
 grps <- d1$Group
 
-# exploratory plot
-toplo <- d1 %>% 
-  select(Carp, Bullhead, Group) %>% 
-  gather('spp', 'abu', -Group) %>% 
-  group_by(Group, spp) %>% 
-  summarise(
-    ave = mean(abu, na.rm = T), 
-    vrc = var(abu, na.rm = T)
-  )
+# standardized variables with lake groups
+vargrp <-  d1 %>% 
+  select(Depth, Secchi, Area, SI, ShedArea, Human, Bluegill) %>% 
+  decostand(method = 'standardize') %>% 
+  mutate(Group = grps)
 
-ggplot(toplo, aes(x = ave, y = vrc, colour = spp, shape = Group)) + 
-  geom_point(size = 6) + 
-  theme_bw() + 
-  scale_x_log10('Log-mean abundance') + 
-  scale_y_log10('Log-variance abundance')
+# factor analysis
+efagrp <- vargrp %>% 
+  group_by(Group) %>% 
+  nest %>% 
+  mutate(
+    efa = map(data, function(x){
+  
+      p <- 0; f <- 1
+      while(p < 0.05 & f < 4){
+        
+        out <- factanal(x, factors = f, rotation = 'varimax')
+        p <- out$PVAL
+        f <- f + 1
+        
+      }
+        
+      return(out)
+      
+    })
+  ) %>% 
+  select(-data) %>% 
+  deframe
+efagrp
 ```
 
-<img src="README_files/figure-html/unnamed-chunk-3.png" width="60%" style="display: block; margin: auto;" />
-
-```r
-# get multivariate homogeneity of groups
-bdisper <- betadisper(abudist, grps)
-
-# test if one or more groups is more variable than the others
-# variance between group is not homogenous
-permutest(bdisper)
 ```
-
-```
+## $`C-B`
 ## 
-## Permutation test for homogeneity of multivariate dispersions
-## Permutation: free
-## Number of permutations: 999
+## Call:
+## factanal(x = x, factors = f, rotation = "varimax")
 ## 
-## Response: Distances
-##            Df Sum Sq Mean Sq      F N.Perm Pr(>F)    
-## Groups      3 2.0485 0.68283 36.375    999  0.001 ***
-## Residuals 235 4.4114 0.01877                         
-## ---
-## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-```
-
-```r
-# multivariate abundance
-abund <- d1 %>% 
-  select(Carp, Bullhead) %>% 
-  mvabund
-
-# test for group (location) effecgt
-mod <- manyglm(abund ~ grps, family = 'negative.binomial')
-anova(mod)
-```
-
-```
-## Time elapsed: 0 hr 0 min 7 sec
-```
-
-```
-## Analysis of Deviance Table
+## Uniquenesses:
+##    Depth   Secchi     Area       SI ShedArea    Human Bluegill 
+##    0.366    0.229    0.265    0.517    0.491    0.005    0.841 
 ## 
-## Model: manyglm(formula = abund ~ grps, family = "negative.binomial")
+## Loadings:
+##          Factor1 Factor2 Factor3
+## Depth     0.149   0.781         
+## Secchi            0.841  -0.248 
+## Area      0.853                 
+## SI        0.694                 
+## ShedArea  0.616           0.357 
+## Human            -0.159   0.983 
+## Bluegill          0.394         
 ## 
-## Multivariate test:
-##             Res.Df Df.diff   Dev Pr(>Dev)    
-## (Intercept)    258                           
-## grps           255       3 613.3    0.001 ***
-## ---
-## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-## Arguments:
-##  Test statistics calculated assuming uncorrelated response (for faster computation) 
-##  P-value calculated using 999 resampling iterations via PIT-trap resampling (to account for correlation in testing).
+##                Factor1 Factor2 Factor3
+## SS loadings      1.620   1.508   1.159
+## Proportion Var   0.231   0.215   0.166
+## Cumulative Var   0.231   0.447   0.612
+## 
+## Test of the hypothesis that 3 factors are sufficient.
+## The chi square statistic is 14.97 on 3 degrees of freedom.
+## The p-value is 0.00184 
+## 
+## $`NC-B`
+## 
+## Call:
+## factanal(x = x, factors = f, rotation = "varimax")
+## 
+## Uniquenesses:
+##    Depth   Secchi     Area       SI ShedArea    Human Bluegill 
+##    0.621    0.005    0.277    0.570    0.722    0.822    0.979 
+## 
+## Loadings:
+##          Factor1 Factor2
+## Depth     0.231   0.571 
+## Secchi            0.997 
+## Area      0.844   0.104 
+## SI        0.620   0.213 
+## ShedArea  0.527         
+## Human    -0.339  -0.251 
+## Bluegill         -0.143 
+## 
+##                Factor1 Factor2
+## SS loadings      1.544   1.460
+## Proportion Var   0.221   0.209
+## Cumulative Var   0.221   0.429
+## 
+## Test of the hypothesis that 2 factors are sufficient.
+## The chi square statistic is 7.65 on 8 degrees of freedom.
+## The p-value is 0.468 
+## 
+## $`C-NB`
+## 
+## Call:
+## factanal(x = x, factors = f, rotation = "varimax")
+## 
+## Uniquenesses:
+##    Depth   Secchi     Area       SI ShedArea    Human Bluegill 
+##    1.000    0.959    0.253    0.522    0.239    0.982    0.970 
+## 
+## Loadings:
+##          Factor1
+## Depth           
+## Secchi   -0.203 
+## Area      0.864 
+## SI        0.691 
+## ShedArea  0.873 
+## Human     0.135 
+## Bluegill -0.173 
+## 
+##                Factor1
+## SS loadings      2.076
+## Proportion Var   0.297
+## 
+## Test of the hypothesis that 1 factor is sufficient.
+## The chi square statistic is 16.41 on 14 degrees of freedom.
+## The p-value is 0.289 
+## 
+## $`NC-NB`
+## 
+## Call:
+## factanal(x = x, factors = f, rotation = "varimax")
+## 
+## Uniquenesses:
+##    Depth   Secchi     Area       SI ShedArea    Human Bluegill 
+##    0.565    0.861    0.391    0.558    0.976    0.958    0.533 
+## 
+## Loadings:
+##          Factor1
+## Depth     0.660 
+## Secchi    0.373 
+## Area      0.781 
+## SI        0.665 
+## ShedArea  0.154 
+## Human    -0.206 
+## Bluegill  0.683 
+## 
+##                Factor1
+## SS loadings      2.159
+## Proportion Var   0.308
+## 
+## Test of the hypothesis that 1 factor is sufficient.
+## The chi square statistic is 22.34 on 14 degrees of freedom.
+## The p-value is 0.0719
 ```
 
