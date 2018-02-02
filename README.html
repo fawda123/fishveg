@@ -312,33 +312,51 @@ $(document).ready(function () {
 <pre><code>## $Dim.1
 ## $Dim.1$quanti
 ##          correlation      p.value
-## Secchi     0.7526129 2.206610e-18
-## Depth      0.6664144 2.285964e-13
-## Area       0.6578217 5.878257e-13
-## SI         0.6411719 3.367948e-12
-## ShedArea   0.4188108 2.657264e-05
-## Human     -0.4970077 3.479509e-07
+## SI         0.7706555 1.527340e-14
+## Area       0.6641292 6.658390e-10
+## Depth      0.6517109 1.754037e-09
+## Secchi     0.5841895 1.696595e-07
+## ShedArea   0.4705761 5.132600e-05
+## Human     -0.3830593 1.263445e-03
 ## 
 ## 
 ## $Dim.2
 ## $Dim.2$quanti
 ##          correlation      p.value
-## SI         0.5575659 5.301907e-09
-## Area       0.4310596 1.443179e-05
-## Human      0.3063802 2.670696e-03
-## Secchi    -0.3430016 7.135681e-04
-## Depth     -0.3525522 4.921600e-04
-## Bluegill  -0.6854460 2.515849e-14
+## ShedArea   0.5553123 8.880891e-07
+## Area       0.4699060 5.278181e-05
+## SI         0.3533325 3.120538e-03
+## Human      0.3062451 1.108885e-02
+## Depth     -0.5422913 1.782482e-06
+## Secchi    -0.6418560 3.667359e-09
 ## 
 ## 
 ## $Dim.3
 ## $Dim.3$quanti
 ##          correlation      p.value
-## Human      0.5586744 4.872119e-09
-## Depth      0.4665654 2.139301e-06
-## Area       0.2239698 3.000222e-02
-## ShedArea  -0.7298581 7.134646e-17</code></pre>
+## Human      0.7866493 1.854787e-15
+## ShedArea   0.3783943 1.464301e-03
+## Secchi     0.3092748 1.027855e-02</code></pre>
 <p><img src="README_files/figure-html/Fig3.png" width="60%" style="display: block; margin: auto;" /></p>
+<pre><code>## 
+## Call:
+## mrpp(dat = tomod, grouping = d$Group) 
+## 
+## Dissimilarity index: euclidean 
+## Weights for groups:  n 
+## 
+## Class means and counts:
+## 
+##       C hi, B hi C hi, B lo C lo, B hi C lo, B lo
+## delta 2.317      4.259      2.772      3.399     
+## n     26         7          11         24        
+## 
+## Chance corrected within-group agreement A: 0.0652 
+## Based on observed delta 2.972 and expected delta 3.18 
+## 
+## Significance of delta: 0.001 
+## Permutation: free
+## Number of permutations: 999</code></pre>
 <p><img src="README_files/figure-html/FigS1.png" width="60%" style="display: block; margin: auto;" /></p>
 </div>
 </div>
