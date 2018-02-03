@@ -314,7 +314,7 @@ mythm <- theme_bw(base_family = 'serif') +
   plot.margin = margin(0, 2, 0, 2, "pt")
 ) 
 
-p1 <- ggord(ppp, grp_in = d$Group, vec_ext = 5, alpha = 0.7, size = 3, txt = 4, arrow = 0.3, repel = T, ellipse = F) + 
+p1 <- ggord(ppp, grp_in = d$Group, vec_ext = 5, alpha = 0.7, size = 3, txt = 4, arrow = 0.3, repel = T, ellipse = T) + 
   mythm
 
 # tiff('fig3.tif', height = 5, width = 4, units = 'in', compression = 'lzw', res = 300, family = 'serif')
