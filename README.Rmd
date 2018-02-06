@@ -288,19 +288,16 @@ d<- select(rev_fishdat,
   ) %>% 
   rename(SI = SDI) %>% 
   mutate(
-    Carp = 1 + Carp, 
-    Bullhead = 1 + Bullhead, 
     Bluegill = 1 + Bluegill,
     Ecoregion = factor(Ecoregion, levels = c('Forest', 'Plain'), labels = c('Eastern Temperate Forests', 'Great Plains'))
   )
   
 d <- d %>% 
   mutate(
-    carp_cat = cut(Carp, c(-Inf, quantile(Carp, c(0.25, 0.75)), Inf), labels = paste0('C ', c('lo', 'md', 'hi'))), 
-    bull_cat = cut(Bullhead, c(-Inf, quantile(Bullhead, c(0.25, 0.75)), Inf), labels = paste0('B ', c('lo', 'md', 'hi')))
-  ) %>% 
-  unite('Group', carp_cat, bull_cat, sep = ', ') %>% 
-  filter(!grepl('md', Group))
+    carp_cat = ifelse(Carp > 0, 'C_prs', 'C_abs'),
+    bull_cat = ifelse(Bullhead > 0 , 'B_prs', 'B_abs')
+    ) %>% 
+  unite('Group', carp_cat, bull_cat, sep = ', ')
 
 tomod <-  d %>% 
   select(Depth, Secchi, Area, SI, ShedArea, Human) %>% 
@@ -320,7 +317,16 @@ p1 <- ggord(ppp, grp_in = d$Group, vec_ext = 5, alpha = 0.7, size = 3, txt = 4, 
 # tiff('fig3.tif', height = 5, width = 4, units = 'in', compression = 'lzw', res = 300, family = 'serif')
 p1
 # dev.off()
+```
 
+```{r Fig3_noellipse}
+p2 <- ggord(ppp, grp_in = d$Group, vec_ext = 5, alpha = 0.7, size = 3, txt = 4, arrow = 0.3, repel = T, ellipse = F) + 
+  mythm
+
+# tiff('fig3.tif', height = 5, width = 4, units = 'in', compression = 'lzw', res = 300, family = 'serif')
+p2
+
+# dev.off()
 # MRPP to test differences among groups (by mean and/or variance of dissimilarities)
 # significant values means that groupings were moree different than would be expected by chance
 # delta statistics for each group indicates relative dissimilarity within groups
