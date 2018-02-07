@@ -320,17 +320,51 @@ p1
 # dev.off()
 ```
 
-```{r Fig3_noellipse}
-szs <- d$abuall
+```{r Fig3_carp, fig.height = 6, fig.width = 6}
+toscl <- range(d[, c('Carp', 'Bullhead')]) %>% 
+  diff
 
-p2 <- ggord(ppp, grp_in = d$Group, vec_ext = 5, alpha = 0.7, size = szs, txt = 4, arrow = 0.3, repel = T, ellipse = F, sizelab = 'Abundance') + 
-  scale_size(range = c(1.5, 7)) +
+minrng <- 0.75
+maxrng <- 10
+
+szs <- d$Carp
+rngs <- range(szs) %>% 
+  diff %>%
+  '/'(toscl) %>% 
+  '*'(abs(diff(c(maxrng, minrng)))) %>% 
+  '+'(minrng) %>% 
+  c(minrng, .)
+
+p <- ggord(ppp, grp_in = d$Group, vec_ext = 5, alpha = 0.7, size = szs, txt = 4, arrow = 0.3, repel = T, ellipse = F, sizelab = 'Carp\nabundance') + 
+  scale_size(range = rngs) +
   mythm
 
 # tiff('fig3.tif', height = 5, width = 4, units = 'in', compression = 'lzw', res = 300, family = 'serif')
-p2
+p
 
 # dev.off()
+```
+
+```{r Fig3_bullhead, fig.height = 6, fig.width = 6}
+szs <- d$Bullhead
+rngs <- range(szs) %>% 
+  diff %>%
+  '/'(toscl) %>% 
+  '*'(abs(diff(c(maxrng, minrng)))) %>% 
+  '+'(minrng) %>% 
+  c(minrng, .)
+
+p <- ggord(ppp, grp_in = d$Group, vec_ext = 5, alpha = 0.7, size = szs, txt = 4, arrow = 0.3, repel = T, ellipse = F, sizelab = 'Bullhead\nabundance') + 
+  scale_size(range = rngs) +
+  mythm
+
+# tiff('fig3.tif', height = 5, width = 4, units = 'in', compression = 'lzw', res = 300, family = 'serif')
+p
+
+# dev.off()
+```
+
+```{r}
 # MRPP to test differences among groups (by mean and/or variance of dissimilarities)
 # significant values means that groupings were moree different than would be expected by chance
 # delta statistics for each group indicates relative dissimilarity within groups

@@ -115,7 +115,10 @@ GP          SpeciesRichness   3.6 (3)        13.6      0 / 16
 
 <img src="README_files/figure-html/Fig3.png" width="60%" style="display: block; margin: auto;" />
 
-<img src="README_files/figure-html/Fig3_noellipse.png" width="60%" style="display: block; margin: auto;" />
+<img src="README_files/figure-html/Fig3_carp.png" width="60%" style="display: block; margin: auto;" />
+
+<img src="README_files/figure-html/Fig3_bullhead.png" width="60%" style="display: block; margin: auto;" />
+
 
 ```
 ## 
