@@ -295,7 +295,8 @@ d<- select(rev_fishdat,
 d <- d %>% 
   mutate(
     carp_cat = ifelse(Carp > 0, 'C_prs', 'C_abs'),
-    bull_cat = ifelse(Bullhead > 0 , 'B_prs', 'B_abs')
+    bull_cat = ifelse(Bullhead > 0 , 'B_prs', 'B_abs'),
+    abuall = Carp + Bullhead
     ) %>% 
   unite('Group', carp_cat, bull_cat, sep = ', ')
 
@@ -320,7 +321,10 @@ p1
 ```
 
 ```{r Fig3_noellipse}
-p2 <- ggord(ppp, grp_in = d$Group, vec_ext = 5, alpha = 0.7, size = 3, txt = 4, arrow = 0.3, repel = T, ellipse = F) + 
+szs <- d$abuall
+
+p2 <- ggord(ppp, grp_in = d$Group, vec_ext = 5, alpha = 0.7, size = szs, txt = 4, arrow = 0.3, repel = T, ellipse = F, sizelab = 'Abundance') + 
+  scale_size(range = c(1.5, 7)) +
   mythm
 
 # tiff('fig3.tif', height = 5, width = 4, units = 'in', compression = 'lzw', res = 300, family = 'serif')
