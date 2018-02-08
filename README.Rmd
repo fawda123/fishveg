@@ -278,7 +278,7 @@ p3
 # dev.off()
 ```
 
-```{r Fig3, fig.height = 6, fig.width = 6}
+```{r Fig3_ellp, fig.height = 6, fig.width = 6}
 
 rev_fishdat <- read.csv("ignore/d2.csv")
 
@@ -298,9 +298,10 @@ d <- d %>%
     bull_cat = ifelse(Bullhead > 0 , 'B_prs', 'B_abs'),
     abuall = Carp + Bullhead
     ) %>% 
-  unite('Group', carp_cat, bull_cat, sep = ', ')
+  unite('Group', carp_cat, bull_cat, sep = ', ') %>% 
+  filter(!Group %in% 'C_prs, B_prs')
 
-tomod <-  d %>% 
+tomod <- d %>% 
   select(Depth, Secchi, Area, SI, ShedArea, Human) %>% 
   decostand(method = 'standardize')
 ppp <- PCA(tomod, scale.unit = F, graph = F)
@@ -312,49 +313,20 @@ mythm <- theme_bw(base_family = 'serif') +
   plot.margin = margin(0, 2, 0, 2, "pt")
 ) 
 
-p1 <- ggord(ppp, grp_in = d$Group, vec_ext = 5, alpha = 0.7, size = 3, txt = 4, arrow = 0.3, repel = T, ellipse = T) + 
-  mythm
+rngs <- c(1.5, 10)
 
-# tiff('fig3.tif', height = 5, width = 4, units = 'in', compression = 'lzw', res = 300, family = 'serif')
-p1
-# dev.off()
-```
-
-```{r Fig3_carp, fig.height = 6, fig.width = 6}
-toscl <- range(d[, c('Carp', 'Bullhead')]) %>% 
-  diff
-
-minrng <- 0.75
-maxrng <- 10
-
-szs <- d$Carp
-rngs <- range(szs) %>% 
-  diff %>%
-  '/'(toscl) %>% 
-  '*'(abs(diff(c(maxrng, minrng)))) %>% 
-  '+'(minrng) %>% 
-  c(minrng, .)
-
-p <- ggord(ppp, grp_in = d$Group, vec_ext = 5, alpha = 0.7, size = szs, txt = 4, arrow = 0.3, repel = T, ellipse = F, sizelab = 'Carp\nabundance') + 
+p <- ggord(ppp, grp_in = d$Group, vec_ext = 5, alpha = 0.7, size = d$abuall, txt = 4, arrow = 0.3, repel = T, ellipse = T, sizelab = 'Abundance') + 
   scale_size(range = rngs) +
   mythm
 
 # tiff('fig3.tif', height = 5, width = 4, units = 'in', compression = 'lzw', res = 300, family = 'serif')
 p
-
 # dev.off()
 ```
 
-```{r Fig3_bullhead, fig.height = 6, fig.width = 6}
-szs <- d$Bullhead
-rngs <- range(szs) %>% 
-  diff %>%
-  '/'(toscl) %>% 
-  '*'(abs(diff(c(maxrng, minrng)))) %>% 
-  '+'(minrng) %>% 
-  c(minrng, .)
+```{r Fig3_noellp, fig.height = 6, fig.width = 6}
 
-p <- ggord(ppp, grp_in = d$Group, vec_ext = 5, alpha = 0.7, size = szs, txt = 4, arrow = 0.3, repel = T, ellipse = F, sizelab = 'Bullhead\nabundance') + 
+p <- ggord(ppp, grp_in = d$Group, vec_ext = 5, alpha = 0.7, size = d$abuall, txt = 4, arrow = 0.3, repel = T, ellipse = F, sizelab = 'Abundance') + 
   scale_size(range = rngs) +
   mythm
 

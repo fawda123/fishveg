@@ -84,40 +84,33 @@ GP          SpeciesRichness   3.6 (3)        13.6      0 / 16
 ## $Dim.1
 ## $Dim.1$quanti
 ##          correlation      p.value
-## Area       0.7773476 2.020114e-50
-## SI         0.7528458 1.138095e-45
-## ShedArea   0.6081089 5.767018e-26
-## Depth      0.5769222 5.829393e-23
-## Secchi     0.4729209 6.044316e-15
-## Human     -0.2412841 1.457969e-04
+## Area       0.7860206 1.015484e-24
+## SI         0.7734069 1.630443e-23
+## ShedArea   0.6494177 9.532365e-15
+## Depth      0.5360987 1.117709e-09
+## Secchi     0.3961291 1.536162e-05
+## Human     -0.3784257 3.888090e-05
 ## 
 ## 
 ## $Dim.2
 ## $Dim.2$quanti
 ##          correlation      p.value
-## ShedArea   0.5114765 1.334492e-17
-## Human      0.4935204 2.534842e-16
-## Area       0.3832484 6.366952e-10
-## SI         0.2823737 7.807990e-06
-## Depth     -0.6124036 2.093419e-26
-## Secchi    -0.7382769 4.217841e-43
+## Secchi     0.8064513 7.421998e-27
+## Depth      0.6610155 2.165823e-15
+## Area      -0.3495368 1.583936e-04
+## ShedArea  -0.4291811 2.339178e-06
 ## 
 ## 
 ## $Dim.3
 ## $Dim.3$quanti
-##          correlation      p.value
-## Human      0.7819274 2.238068e-51
-## Depth      0.3551340 1.239968e-08
-## Secchi     0.2384996 1.747508e-04
-## ShedArea   0.2356655 2.096728e-04
-## SI        -0.2408795 1.497050e-04
+##       correlation      p.value
+## Human   0.9189264 2.970500e-46
+## Depth   0.1911756 4.346867e-02
 ```
 
-<img src="README_files/figure-html/Fig3.png" width="60%" style="display: block; margin: auto;" />
+<img src="README_files/figure-html/Fig3_ellp.png" width="60%" style="display: block; margin: auto;" />
 
-<img src="README_files/figure-html/Fig3_carp.png" width="60%" style="display: block; margin: auto;" />
-
-<img src="README_files/figure-html/Fig3_bullhead.png" width="60%" style="display: block; margin: auto;" />
+<img src="README_files/figure-html/Fig3_noellp.png" width="60%" style="display: block; margin: auto;" />
 
 
 ```
@@ -130,14 +123,14 @@ GP          SpeciesRichness   3.6 (3)        13.6      0 / 16
 ## 
 ## Class means and counts:
 ## 
-##       C_abs, B_abs C_abs, B_prs C_prs, B_abs C_prs, B_prs
-## delta 2.856        3.569        3.144        2.859       
-## n     20           64           28           131         
+##       C_abs, B_abs C_abs, B_prs C_prs, B_abs
+## delta 2.683        3.398        2.995       
+## n     20           64           28          
 ## 
-## Chance corrected within-group agreement A: 0.03333 
-## Based on observed delta 3.079 and expected delta 3.185 
+## Chance corrected within-group agreement A: 0.005913 
+## Based on observed delta 3.169 and expected delta 3.188 
 ## 
-## Significance of delta: 0.001 
+## Significance of delta: 0.114 
 ## Permutation: free
 ## Number of permutations: 999
 ```
