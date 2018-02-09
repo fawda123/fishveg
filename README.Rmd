@@ -278,7 +278,7 @@ p3
 # dev.off()
 ```
 
-```{r Fig3_ellp, fig.height = 6, fig.width = 6}
+```{r Fig3_nojit, fig.height = 6, fig.width = 6}
 
 rev_fishdat <- read.csv("ignore/d2.csv")
 
@@ -298,8 +298,7 @@ d <- d %>%
     bull_cat = ifelse(Bullhead > 0 , 'B_prs', 'B_abs'),
     abuall = Carp + Bullhead
     ) %>% 
-  unite('Group', carp_cat, bull_cat, sep = ', ') %>% 
-  filter(!Group %in% 'C_prs, B_prs')
+  unite('Group', carp_cat, bull_cat, sep = ', ')
 
 tomod <- d %>% 
   select(Depth, Secchi, Area, SI, ShedArea, Human) %>% 
@@ -313,22 +312,64 @@ mythm <- theme_bw(base_family = 'serif') +
   plot.margin = margin(0, 2, 0, 2, "pt")
 ) 
 
-rngs <- c(1.5, 10)
+##
+# carp + bullhead and none lakes, separate points for carp/bullhead, jittered, no jitter
+rngs <- c(1, 7)
 
-p <- ggord(ppp, grp_in = d$Group, vec_ext = 5, alpha = 0.7, size = d$abuall, txt = 4, arrow = 0.3, repel = T, ellipse = T, sizelab = 'Abundance') + 
+locs <- ppp %>% 
+  .$ind %>% 
+  .$coord %>% 
+  as.data.frame %>% 
+  select(Dim.1, Dim.2) %>% 
+  rename(
+    one = Dim.1, 
+    two = Dim.2
+  ) %>% 
+  rownames_to_column('id')
+
+toplo <- d %>% 
+  select(Carp, Bullhead) %>% 
+  rownames_to_column('id') %>% 
+  gather('var', 'val', -id) %>% 
+  group_by(id) %>% 
+  nest %>% 
+  mutate(var = map(data, function(x){
+    
+    if(sum(x$val) == 0)
+      rep('None', 2)
+    else 
+      x$var
+    
+    } 
+  )) %>% 
+  unnest %>% 
+  select(id, var, val) %>% 
+  left_join(locs, by = 'id') 
+
+p <- ggord(ppp, vec_ext = 5, size = -1, txt = 4, arrow = 0.3, 
+      repel = T, ellipse = F) + 
+  geom_point(data = toplo, aes(size = val, colour = var), alpha = 0.7) +
   scale_size(range = rngs) +
-  mythm
-
+  mythm +
+  guides(size=guide_legend(title = 'Abundance'))
 # tiff('fig3.tif', height = 5, width = 4, units = 'in', compression = 'lzw', res = 300, family = 'serif')
 p
 # dev.off()
 ```
 
-```{r Fig3_noellp, fig.height = 6, fig.width = 6}
+```{r Fig3_jit, fig.height = 6, fig.width = 6}
+toplo <- toplo %>% 
+  mutate(
+    one = ifelse(!var %in% 'None', one + rnorm(nrow(.), 0, 0.2), one),
+    two = ifelse(!var %in% 'None', two + rnorm(nrow(.), 0, 0), two)
+  )
 
-p <- ggord(ppp, grp_in = d$Group, vec_ext = 5, alpha = 0.7, size = d$abuall, txt = 4, arrow = 0.3, repel = T, ellipse = F, sizelab = 'Abundance') + 
+p <- ggord(ppp, vec_ext = 5, size = -1, txt = 4, arrow = 0.3, 
+      repel = T, ellipse = F) + 
+  geom_point(data = toplo, aes(size = val, colour = var), alpha = 0.7) +
   scale_size(range = rngs) +
-  mythm
+  mythm +
+  guides(size=guide_legend(title = 'Abundance'))
 
 # tiff('fig3.tif', height = 5, width = 4, units = 'in', compression = 'lzw', res = 300, family = 'serif')
 p
