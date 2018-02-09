@@ -315,6 +315,9 @@ mythm <- theme_bw(base_family = 'serif') +
 ##
 # carp + bullhead and none lakes, separate points for carp/bullhead, jittered, no jitter
 rngs <- c(1, 7)
+    
+brks <- c(-Inf, 0, 1, 2, 5, 10, Inf)
+labs <- c('0', '< 1',  '< 2', '< 5', '< 10', '> 10')
 
 locs <- ppp %>% 
   .$ind %>% 
@@ -334,7 +337,7 @@ toplo <- d %>%
   group_by(id) %>% 
   nest %>% 
   mutate(var = map(data, function(x){
-    
+  
     if(sum(x$val) == 0)
       rep('None', 2)
     else 
@@ -343,15 +346,20 @@ toplo <- d %>%
     } 
   )) %>% 
   unnest %>% 
-  select(id, var, val) %>% 
-  left_join(locs, by = 'id') 
+  mutate(valcut = cut(val, breaks = brks, labels = labs)) %>% 
+  select(id, var, val, valcut) %>% 
+  left_join(locs, by = 'id')
+
+# format fish data to same scale
+
+# legend labels, color palette
+leglabs <- list(expression(0), expression(phantom('')<=1), expression(phantom('')<=2), expression(phantom('')<=5), expression(phantom('')<=10), expression(phantom('')>10))
 
 p <- ggord(ppp, vec_ext = 5, size = -1, txt = 4, arrow = 0.3, 
       repel = T, ellipse = F) + 
-  geom_point(data = toplo, aes(size = val, colour = var), alpha = 0.7) +
-  scale_size(range = rngs) +
-  mythm +
-  guides(size=guide_legend(title = 'Abundance'))
+  geom_point(data = toplo, aes(size = valcut, colour = var), alpha = 0.7) +
+  scale_size_discrete('Fish kg/net', range = c(1, 7), labels = leglabs) +
+  mythm
 # tiff('fig3.tif', height = 5, width = 4, units = 'in', compression = 'lzw', res = 300, family = 'serif')
 p
 # dev.off()
@@ -366,10 +374,9 @@ toplo <- toplo %>%
 
 p <- ggord(ppp, vec_ext = 5, size = -1, txt = 4, arrow = 0.3, 
       repel = T, ellipse = F) + 
-  geom_point(data = toplo, aes(size = val, colour = var), alpha = 0.7) +
-  scale_size(range = rngs) +
-  mythm +
-  guides(size=guide_legend(title = 'Abundance'))
+  geom_point(data = toplo, aes(size = valcut, colour = var), alpha = 0.7) +
+  scale_size_discrete('Fish kg/net', range = c(1, 7), labels = leglabs) +
+  mythm
 
 # tiff('fig3.tif', height = 5, width = 4, units = 'in', compression = 'lzw', res = 300, family = 'serif')
 p
