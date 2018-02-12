@@ -316,8 +316,8 @@ mythm <- theme_bw(base_family = 'serif') +
 # carp + bullhead and none lakes, separate points for carp/bullhead, jittered, no jitter
 rngs <- c(1, 7)
     
-brks <- c(-Inf, 0, 1, 2, 5, 10, Inf)
-labs <- c('0', '< 1',  '< 2', '< 5', '< 10', '> 10')
+brks <- c(-Inf, 0, 1, 5, 10, Inf)
+labs <- c('0', '< 1', '< 5', '< 10', '> 10')
 
 locs <- ppp %>% 
   .$ind %>% 
@@ -354,12 +354,12 @@ toplo <- d %>%
 # format fish data to same scale
 
 # legend labels, color palette
-leglabs <- list(expression(0), expression(phantom('')<=1), expression(phantom('')<=2), expression(phantom('')<=5), expression(phantom('')<=10), expression(phantom('')>10))
+leglabs <- list(expression(0), expression(phantom('')<=1), expression(phantom('')<=5), expression(phantom('')<=10), expression(phantom('')>10))
 
 p <- ggord(ppp, vec_ext = 7, size = -1, txt = 4, arrow = 0.3, 
       repel = T, ellipse = F) + 
   geom_point(data = toplo, aes(size = valcut, fill = Group), pch = 21, alpha = 1) +
-  scale_size_discrete('Fish kg/net', range = c(2, 7), labels = leglabs) +
+  scale_size_manual('Fish kg/net', values = c(1.5, 2.25, 3, 3.75, 5.5), labels = leglabs) +
   scale_fill_manual(values = c('lightblue', 'tomato1', 'yellow2')) + 
   mythm +
   guides(fill = guide_legend(override.aes = list(size = 3)))
