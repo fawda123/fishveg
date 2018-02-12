@@ -301,7 +301,7 @@ d <- d %>%
   unite('Group', carp_cat, bull_cat, sep = ', ')
 
 tomod <- d %>% 
-  select(Depth, Secchi, Area, SI, ShedArea, Human) %>% 
+  select(Bluegill, Depth, Secchi, Area, SI, ShedArea, Human) %>% 
   decostand(method = 'standardize')
 ppp <- PCA(tomod, scale.unit = F, graph = F)
 dimdesc(ppp, axes = c(1:3))
@@ -348,39 +348,23 @@ toplo <- d %>%
   unnest %>% 
   mutate(valcut = cut(val, breaks = brks, labels = labs)) %>% 
   select(id, var, val, valcut) %>% 
-  left_join(locs, by = 'id')
+  left_join(locs, by = 'id') %>% 
+  rename(Group = var)
 
 # format fish data to same scale
 
 # legend labels, color palette
 leglabs <- list(expression(0), expression(phantom('')<=1), expression(phantom('')<=2), expression(phantom('')<=5), expression(phantom('')<=10), expression(phantom('')>10))
 
-p <- ggord(ppp, vec_ext = 5, size = -1, txt = 4, arrow = 0.3, 
+p <- ggord(ppp, vec_ext = 7, size = -1, txt = 4, arrow = 0.3, 
       repel = T, ellipse = F) + 
-  geom_point(data = toplo, aes(size = valcut, colour = var), alpha = 0.7) +
-  scale_size_discrete('Fish kg/net', range = c(1, 7), labels = leglabs) +
-  mythm
+  geom_point(data = toplo, aes(size = valcut, fill = Group), pch = 21, alpha = 1) +
+  scale_size_discrete('Fish kg/net', range = c(2, 7), labels = leglabs) +
+  scale_fill_manual(values = c('lightblue', 'tomato1', 'yellow2')) + 
+  mythm +
+  guides(fill = guide_legend(override.aes = list(size = 3)))
 # tiff('fig3.tif', height = 5, width = 4, units = 'in', compression = 'lzw', res = 300, family = 'serif')
 p
-# dev.off()
-```
-
-```{r Fig3_jit, fig.height = 6, fig.width = 6}
-toplo <- toplo %>% 
-  mutate(
-    one = ifelse(!var %in% 'None', one + rnorm(nrow(.), 0, 0.2), one),
-    two = ifelse(!var %in% 'None', two + rnorm(nrow(.), 0, 0), two)
-  )
-
-p <- ggord(ppp, vec_ext = 5, size = -1, txt = 4, arrow = 0.3, 
-      repel = T, ellipse = F) + 
-  geom_point(data = toplo, aes(size = valcut, colour = var), alpha = 0.7) +
-  scale_size_discrete('Fish kg/net', range = c(1, 7), labels = leglabs) +
-  mythm
-
-# tiff('fig3.tif', height = 5, width = 4, units = 'in', compression = 'lzw', res = 300, family = 'serif')
-p
-
 # dev.off()
 ```
 

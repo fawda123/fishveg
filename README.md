@@ -84,38 +84,39 @@ GP          SpeciesRichness   3.6 (3)        13.6      0 / 16
 ## $Dim.1
 ## $Dim.1$quanti
 ##          correlation      p.value
-## Area       0.7773476 2.020114e-50
-## SI         0.7528458 1.138095e-45
-## ShedArea   0.6081089 5.767018e-26
-## Depth      0.5769222 5.829393e-23
-## Secchi     0.4729209 6.044316e-15
-## Human     -0.2412841 1.457969e-04
+## Area       0.7003128 3.807019e-37
+## SI         0.6913952 7.004454e-36
+## Depth      0.6681614 8.605820e-33
+## Secchi     0.5682525 3.508253e-22
+## ShedArea   0.5148838 7.483030e-18
+## Bluegill   0.3366858 7.480955e-08
+## Human     -0.3085629 9.321755e-07
 ## 
 ## 
 ## $Dim.2
 ## $Dim.2$quanti
 ##          correlation      p.value
-## ShedArea   0.5114765 1.334492e-17
-## Human      0.4935204 2.534842e-16
-## Area       0.3832484 6.366952e-10
-## SI         0.2823737 7.807990e-06
-## Depth     -0.6124036 2.093419e-26
-## Secchi    -0.7382769 4.217841e-43
+## ShedArea   0.6014935 2.666295e-25
+## Area       0.5103664 1.609032e-17
+## Human      0.4193134 9.127571e-12
+## SI         0.4108897 2.576117e-11
+## Bluegill  -0.4404832 5.903931e-13
+## Depth     -0.4946689 2.110547e-16
+## Secchi    -0.6035959 1.645328e-25
 ## 
 ## 
 ## $Dim.3
 ## $Dim.3$quanti
 ##          correlation      p.value
-## Human      0.7819274 2.238068e-51
-## Depth      0.3551340 1.239968e-08
-## Secchi     0.2384996 1.747508e-04
-## ShedArea   0.2356655 2.096728e-04
-## SI        -0.2408795 1.497050e-04
+## Human      0.8010119 1.271334e-55
+## Depth      0.3189660 3.777135e-07
+## ShedArea   0.2441587 1.206597e-04
+## Secchi     0.1748791 6.273497e-03
+## Bluegill   0.1491421 2.002227e-02
+## SI        -0.2379305 1.812935e-04
 ```
 
 <img src="README_files/figure-html/Fig3_nojit.png" width="60%" style="display: block; margin: auto;" />
-
-<img src="README_files/figure-html/Fig3_jit.png" width="60%" style="display: block; margin: auto;" />
 
 
 ```
@@ -129,11 +130,11 @@ GP          SpeciesRichness   3.6 (3)        13.6      0 / 16
 ## Class means and counts:
 ## 
 ##       C_abs, B_abs C_abs, B_prs C_prs, B_abs C_prs, B_prs
-## delta 2.856        3.569        3.144        2.859       
+## delta 3.103        3.904         3.34        3.161       
 ## n     20           64           28           131         
 ## 
-## Chance corrected within-group agreement A: 0.03333 
-## Based on observed delta 3.079 and expected delta 3.185 
+## Chance corrected within-group agreement A: 0.03475 
+## Based on observed delta 3.372 and expected delta 3.494 
 ## 
 ## Significance of delta: 0.001 
 ## Permutation: free
