@@ -20,6 +20,7 @@
 <script src="README_files/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
 <script src="README_files/bootstrap-3.3.5/shim/respond.min.js"></script>
 <script src="README_files/navigation-1.1/tabsets.js"></script>
+<script src="README_files/navigation-1.1/codefolding.js"></script>
 <link href="README_files/highlightjs-9.12.0/default.css" rel="stylesheet" />
 <script src="README_files/highlightjs-9.12.0/highlight.js"></script>
 
@@ -107,6 +108,14 @@ $(document).ready(function () {
 </script>
 
 <!-- code folding -->
+<style type="text/css">
+.code-folding-btn { margin-bottom: 4px; }
+</style>
+<script>
+$(document).ready(function () {
+  window.initializeCodeFolding("hide" === "show");
+});
+</script>
 
 
 
@@ -115,16 +124,56 @@ $(document).ready(function () {
 
 <div class="fluid-row" id="header">
 
+<div class="btn-group pull-right">
+<button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<ul class="dropdown-menu" style="min-width: 50px;">
+<li><a id="rmd-show-all-code" href="#">Show All Code</a></li>
+<li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li>
+</ul>
+</div>
+
 
 
 
 </div>
 
+<div id="TOC">
+<ul>
+<li><a href="#readme">README</a><ul>
+<li><a href="#files">Files</a></li>
+<li><a href="#summary-table">Summary table</a></li>
+<li><a href="#fig-1">Fig 1</a></li>
+<li><a href="#fig-2">Fig 2</a></li>
+<li><a href="#fig-3">Fig 3</a></li>
+<li><a href="#mrrp-all-groups">MRRP all groups</a></li>
+<li><a href="#mrpp-multiple-comparisons">MRPP multiple comparisons</a></li>
+</ul></li>
+</ul>
+</div>
 
-<div id="readme" class="section level2">
-<h2>README</h2>
-<div id="files" class="section level4">
-<h4>Files</h4>
+<div id="readme" class="section level1">
+<h1>README</h1>
+<pre class="r"><code>library(tidyr)
+library(ggplot2)
+library(purrr)
+library(dplyr)
+library(stargazer)
+library(vegan)
+library(maptools)
+library(ggsn)
+library(knitr)
+library(ggord)
+library(gridExtra)
+library(FactoMineR)
+source(&#39;R/funcs.R&#39;)
+
+opts_chunk$set(fig.align = &#39;center&#39;, message = F, echo = T, cache = F, dev = &#39;png&#39;, dev.args = list(family = &#39;serif&#39;), dpi = 400, fig.pos = &#39;!h&#39;, warning = F, background = &#39;white&#39;, out.width = &#39;60%&#39;,
+  fig.process = function(x) {
+  x2 = sub(&#39;-\\d+([.][a-z]+)$&#39;, &#39;\\1&#39;, x)
+  if (file.rename(x, x2)) x2 else x
+  })</code></pre>
+<div id="files" class="section level2">
+<h2>Files</h2>
 <p>All data created in <code>R\dat_proc.R</code>. Source data in the ignore folder were created elsewhere.</p>
 <ul>
 <li><p><code>country.RData</code> SpatialPolygonsDataFrame of US conterminous state borders</p></li>
@@ -135,8 +184,60 @@ $(document).ready(function () {
 <li><p><code>veg_dat.RData</code> DNR veg transect data from 1992 to present. Format is dow, date, transect, species, and abundance category. NULL abundance entries are not removed, these are species in the survey but not observed on a transect. Note that there were no lakes in the dataset that had zero veg.</p></li>
 </ul>
 </div>
-<div id="summary-table" class="section level4">
-<h4>Summary table</h4>
+<div id="summary-table" class="section level2">
+<h2>Summary table</h2>
+<pre class="r"><code># diagnostic plots
+data(map_dat)
+
+fishdat &lt;- 
+
+# format data
+totab &lt;- select(fishdat, 
+                S_rich, common.carp_GN, black.bullhead_TN, bluegill_TN, secchim, sdi, phuman, aream2, shedaream2, ecoreg, depthm
+) %&gt;% 
+  mutate(
+    ecoreg = factor(ecoreg, levels = c(&#39;eastern temperate forests&#39;, &#39;great plains&#39;), labels = c(&#39;ETF&#39;, &#39;GP&#39;))
+  ) %&gt;% 
+  rename(
+    SpeciesRichness = S_rich, 
+    Carp = common.carp_GN,
+    Bullhead = black.bullhead_TN, 
+    Bluegill = bluegill_TN,
+    Secchi = secchim, 
+    SDI = sdi, 
+    Human = phuman, 
+    Area = aream2,
+    ShedArea = shedaream2,
+    Depth = depthm, 
+    Ecoregion = ecoreg
+  ) %&gt;% 
+  mutate(
+    Area = Area * 1e-6,
+    ShedArea = ShedArea * 1e-6
+  ) %&gt;% 
+  gather(&#39;Variable&#39;, &#39;val&#39;, -Ecoregion) %&gt;% 
+  mutate(Variable = factor(Variable, 
+                      levels = c(&#39;SpeciesRichness&#39;, &#39;Carp&#39;, &#39;Bullhead&#39;, &#39;Bluegill&#39;, &#39;Area&#39;, &#39;Depth&#39;, &#39;Human&#39;, &#39;SDI&#39;, &#39;Secchi&#39;, &#39;ShedArea&#39;))
+         ) %&gt;% 
+  group_by(Ecoregion, Variable) %&gt;% 
+  summarise(
+    Average = round(mean(val, na.rm = T), 1), 
+    Median  = round(median(val, na.rm = T), 1),
+    Var. = round(var(val, na.rm = T), 1), 
+    Min. = round(min(val, na.rm = T), 1),
+    Max. = round(max(val, na.rm = T), 1)
+  ) %&gt;% 
+  unite(&#39;Min./Max.&#39;, Min., Max., sep = &#39; / &#39;) %&gt;% 
+  ungroup %&gt;% 
+  mutate(
+    Median = paste0(&#39;(&#39;, Median, &#39;)&#39;), 
+    Ecoregion = ifelse(duplicated(Ecoregion), &#39;&#39;, as.character(Ecoregion)),
+    Var. = as.character(Var.)
+  ) %&gt;% 
+  unite(&#39;Ave. (Med.)&#39;, Average, Median, sep = &#39; &#39;)
+
+write.csv(totab, &#39;ignore/summtab.csv&#39;, quote = F, row.names = F)
+kable(totab)</code></pre>
 <table>
 <thead>
 <tr class="header">
@@ -290,6 +391,13 @@ $(document).ready(function () {
 </tr>
 </tbody>
 </table>
+<pre class="r"><code>merged_2&lt;-read.csv(&quot;ignore/merged_2.csv&quot;)
+d &lt;- merged_2[,c(&quot;common.carp_GN&quot;, &quot;black.bullhead_TN&quot;, &quot;bluegill_TN&quot;, 
+                 &quot;secchim&quot;, &quot;sdi&quot;, &quot;phuman&quot;, &quot;aream2&quot;, &quot;shedaream2&quot;, &quot;depthm&quot;)]
+names(d) &lt;- c(&quot;Carp&quot;, &quot;Bullhead&quot;, &quot;Bluegill&quot;, &quot;Secchi&quot;, &quot;SDI&quot;, 
+              &quot;Human&quot;, &quot;Area&quot;, &quot;ShedArea&quot;, &quot;Depth&quot;)
+d &lt;- log(1 + d)
+vif_func(d)</code></pre>
 <pre><code>##  var      vif             
 ##  Carp     1.40087938822791
 ##  Bullhead 1.32609969244421
@@ -305,10 +413,198 @@ $(document).ready(function () {
 <pre><code>## [1] &quot;Carp&quot;     &quot;Bullhead&quot; &quot;Bluegill&quot; &quot;Secchi&quot;   &quot;SDI&quot;      &quot;Human&quot;   
 ## [7] &quot;Area&quot;     &quot;ShedArea&quot; &quot;Depth&quot;</code></pre>
 </div>
-<div id="figures" class="section level4">
-<h4>Figures</h4>
+<div id="fig-1" class="section level2">
+<h2>Fig 1</h2>
+<pre class="r"><code>library(tidyverse)
+library(maptools)
+library(gridExtra)
+library(grid)
+library(RColorBrewer)
+load(file = &#39;data/map_dat.RData&#39;)
+load(file = &#39;data/country.RData&#39;)
+load(file = &#39;data/mnstate.RData&#39;)
+
+######
+# maps
+
+# get legend from an existing ggplot object
+g_legend &lt;- function(a.gplot){
+  tmp &lt;- ggplot_gtable(ggplot_build(a.gplot))
+  leg &lt;- which(sapply(tmp$grobs, function(x) x$name) == &quot;guide-box&quot;)
+  legend &lt;- tmp$grobs[[leg]]
+  return(legend)}
+
+# format data for ggplot
+state &lt;- fortify(state)
+ecoregs &lt;- fortify(ecoregs)
+counties &lt;- fortify(counties)
+ecoregs &lt;- ecoregs[ecoregs$id %in% c(3, 4), ]
+ecoregs$Ecoregion &lt;- factor(ecoregs$id, levels = c(3, 4), 
+  labels = c(&quot;ETF&quot;, &quot;GP&quot;))
+
+# format fish data to same scale
+brks &lt;- c(-Inf, 0, 1, 2, 5, 10, Inf)
+labs &lt;- c(&#39;0&#39;, &#39;&lt; 1&#39;,  &#39;&lt; 2&#39;, &#39;&lt; 5&#39;, &#39;&lt; 10&#39;, &#39;&gt; 10&#39;)
+toplo &lt;- select(fishdat, utmx, utmy, common.carp_GN, black.bullhead_TN) %&gt;% 
+  mutate(
+    common.carp_GN = cut(common.carp_GN, breaks = brks, labels = labs),
+    black.bullhead_TN = cut(black.bullhead_TN, breaks = brks, labels = labs)
+    )
+
+# legend labels, color palette
+leglabs &lt;- list(expression(0), expression(phantom(&#39;&#39;)&lt;=1), expression(phantom(&#39;&#39;)&lt;=2), expression(phantom(&#39;&#39;)&lt;=5), expression(phantom(&#39;&#39;)&lt;=10), expression(phantom(&#39;&#39;)&gt;10))
+cols &lt;- colorRampPalette(c(&#39;darkgrey&#39;, &#39;black&#39;))(length(leglabs))
+
+# carp cpue GN
+p1 &lt;- ggplot(state, aes(x = long, y = lat)) + 
+  geom_polygon(data = counties, aes(x = long, y = lat, group = group), 
+    fill = NA, colour = &#39;grey&#39;) +
+  geom_polygon(data = ecoregs, aes(x = long, y = lat, group = group, fill= Ecoregion),  
+    alpha = 0.5) +
+  geom_polygon(fill = NA, colour = &#39;black&#39;) +
+  geom_point(data = toplo, aes(x = utmx, y = utmy, size = common.carp_GN, color = common.carp_GN), alpha = 0.8) +
+  scale_size_discrete(&#39;Fish kg/net&#39;, range = c(2, 12), labels = leglabs) + 
+  scale_colour_manual(&#39;Fish kg/net&#39;, values = cols, labels = leglabs) +
+  theme_classic() + 
+  theme(axis.line=element_blank(),axis.text.x=element_blank(),
+          axis.text.y=element_blank(),axis.ticks=element_blank(),
+          axis.title.x=element_blank(),
+          axis.title.y=element_blank(),
+          panel.background=element_blank(),panel.border=element_blank(),panel.grid.major=element_blank(),
+          panel.grid.minor=element_blank(),plot.background=element_blank(), 
+          legend.box.just = &#39;right&#39;,
+        legend.position = c(0.9, 0.37),
+        plot.title = element_text(size = 18)
+    ) +
+  coord_equal() + 
+  ggtitle(&#39;Common Carp&#39;) + 
+  scalebar(location = &#39;topright&#39;, y.min = 5372428, y.max = 5472428, x.min = 761655.1, x.max = 761655.1, 
+    dist=100, st.dist=.1, st.size = 4, height = 0.1)
+
+# black bullhead CPUE TN
+p2 &lt;- ggplot(state, aes(x = long, y = lat)) + 
+  geom_polygon(data = counties, aes(x = long, y = lat, group = group), 
+    fill = NA, colour = &#39;grey&#39;) +
+  geom_polygon(data = ecoregs, aes(x = long, y = lat, group = group, fill= Ecoregion),  
+    alpha = 0.5) +
+  geom_polygon(fill = NA, colour = &#39;black&#39;) +
+  geom_point(data = toplo, aes(x = utmx, y = utmy, size = black.bullhead_TN, color = black.bullhead_TN), alpha = 0.8) +
+  scale_size_discrete(&#39;Bull kg/net&#39;, range = c(2, 12), labels = leglabs) + 
+  scale_colour_manual(&#39;Bull kg/net&#39;, values = cols, labels = leglabs) +
+  theme_classic() + 
+  theme(axis.line=element_blank(),axis.text.x=element_blank(),
+          axis.text.y=element_blank(),axis.ticks=element_blank(),
+          axis.title.x=element_blank(),
+          axis.title.y=element_blank(),
+          panel.background=element_blank(),panel.border=element_blank(),panel.grid.major=element_blank(),
+          panel.grid.minor=element_blank(),plot.background=element_blank(), 
+          legend.box.just = &#39;right&#39;, 
+        legend.position = &#39;none&#39;, 
+        plot.title = element_text(size = 18)
+    ) +
+  coord_equal() +
+  ggtitle(&#39;Black Bullhead&#39;)
+
+# inset
+# inset map
+country &lt;- thinnedSpatialPoly(country, tolerance = 10000, topologyPreserve = TRUE, 
+                              avoidGEOS = FALSE)
+pinset &lt;- ggplot(country, aes(x = long, y = lat, group = group)) + 
+  geom_polygon(fill = NA, colour = &#39;grey&#39;) +
+  geom_polygon(data = mnstate, aes(x = long, y = lat, group = group), 
+    fill = &#39;black&#39;) + 
+  theme_classic() + 
+  theme(axis.line=element_blank(),axis.text.x=element_blank(),
+    axis.text.y=element_blank(),axis.ticks=element_blank(),
+    axis.title.x=element_blank(),
+    axis.title.y=element_blank(),
+    panel.background=element_blank(),panel.border=element_blank(),
+    panel.grid.major=element_blank(),
+    panel.grid.minor=element_blank(),plot.background=element_blank()#, 
+          # legend.position = &#39;none&#39;
+    ) +
+  coord_equal()
+
+# save
+# tiff(&#39;map.tif&#39;, height = 7, width = 12, units = &#39;in&#39;, compression = &#39;lzw&#39;, res = 300, family = &#39;serif&#39;)
+grid.newpage()
+v1 &lt;- viewport(width = 1, height = 1, x = 0.25, y = 0.5) 
+v2 &lt;- viewport(width = 1, height = 1, x = 0.75, y = 0.5) 
+v3 &lt;- viewport(width = 0.28, height = 0.28, x = 0.89, y = 0.87)
+print(p1, vp = v1) 
+print(p2, vp = v2)
+print(pinset, vp = v3)</code></pre>
 <p><img src="README_files/figure-html/Fig1.png" width="60%" style="display: block; margin: auto;" /></p>
+<pre class="r"><code># dev.off()</code></pre>
+</div>
+<div id="fig-2" class="section level2">
+<h2>Fig 2</h2>
+<pre class="r"><code>######
+# diagnostic plots
+data(map_dat)
+
+rev_fishdat &lt;- read.csv(&quot;ignore/d2.csv&quot;)
+
+# format data
+toplo &lt;- select(rev_fishdat, 
+  SpeciesRichness, Carp, Bullhead, Bluegill, Secchi, SDI, Human, Area, ShedArea, Ecoregion, Depth
+  ) %&gt;% 
+  rename(SI = SDI) %&gt;% 
+  mutate(
+    Carp = 1 + Carp, 
+    Bullhead = 1 + Bullhead, 
+    Bluegill = 1 + Bluegill,
+    Ecoregion = factor(Ecoregion, levels = c(&#39;Forest&#39;, &#39;Plain&#39;), labels = c(&#39;Eastern Temperate Forests&#39;, &#39;Great Plains&#39;))
+  ) %&gt;% 
+  gather(&#39;var&#39;, &#39;val&#39;, -SpeciesRichness, -Ecoregion)
+  
+# create plot
+p3 &lt;- ggplot(toplo, aes(x = val, y = SpeciesRichness, fill = Ecoregion, colour = Ecoregion)) + 
+  geom_point(pch = 21, alpha = 0.8) + 
+  scale_x_log10(&#39;Value, log10&#39;) +
+  scale_y_continuous(&#39;Plant richness&#39;, expand = c(0, 0)) + 
+  stat_smooth(method =&#39;lm&#39;, colour = &#39;black&#39;, se = TRUE) + 
+  facet_wrap( ~ var, ncol = 9, scales = &#39;free_x&#39;) +
+  theme_bw() + 
+  theme(
+    legend.position = &#39;top&#39;,
+    legend.title = element_blank(),
+    strip.background = element_rect(fill = &quot;white&quot;)
+    )
+
+# save
+# tiff(&#39;fig3.tif&#39;, height = 5, width = 12, units = &#39;in&#39;, compression = &#39;lzw&#39;, res = 300, family = &#39;serif&#39;)
+p3</code></pre>
 <p><img src="README_files/figure-html/Fig2.png" width="60%" style="display: block; margin: auto;" /></p>
+<pre class="r"><code># dev.off()</code></pre>
+</div>
+<div id="fig-3" class="section level2">
+<h2>Fig 3</h2>
+<pre class="r"><code>rev_fishdat &lt;- read.csv(&quot;ignore/d2.csv&quot;)
+
+# format data
+d&lt;- select(rev_fishdat, 
+  SpeciesRichness, Carp, Bullhead, Bluegill, Secchi, SDI, Human, Area, ShedArea, Ecoregion, Depth
+  ) %&gt;% 
+  rename(SI = SDI) %&gt;% 
+  mutate(
+    Bluegill = 1 + Bluegill,
+    Ecoregion = factor(Ecoregion, levels = c(&#39;Forest&#39;, &#39;Plain&#39;), labels = c(&#39;Eastern Temperate Forests&#39;, &#39;Great Plains&#39;))
+  )
+  
+d &lt;- d %&gt;% 
+  mutate(
+    carp_cat = ifelse(Carp &gt; 0, &#39;C_prs&#39;, &#39;C_abs&#39;),
+    bull_cat = ifelse(Bullhead &gt; 0 , &#39;B_prs&#39;, &#39;B_abs&#39;),
+    abuall = Carp + Bullhead
+    ) %&gt;% 
+  unite(&#39;Group&#39;, carp_cat, bull_cat, sep = &#39;, &#39;)
+
+tomod &lt;- d %&gt;% 
+  select(Bluegill, Depth, Secchi, Area, SI, ShedArea, Human) %&gt;% 
+  decostand(method = &#39;standardize&#39;)
+ppp &lt;- PCA(tomod, scale.unit = F, graph = F)
+dimdesc(ppp, axes = c(1:3))</code></pre>
 <pre><code>## $Dim.1
 ## $Dim.1$quanti
 ##          correlation      p.value
@@ -342,7 +638,75 @@ $(document).ready(function () {
 ## Secchi     0.1748791 6.273497e-03
 ## Bluegill   0.1491421 2.002227e-02
 ## SI        -0.2379305 1.812935e-04</code></pre>
-<p><img src="README_files/figure-html/Fig3_nojit.png" width="60%" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>mythm &lt;- theme_bw(base_family = &#39;serif&#39;) +
+  theme(
+  strip.background = element_blank(), 
+  plot.margin = margin(0, 2, 0, 2, &quot;pt&quot;)
+) 
+
+##
+# carp + bullhead and none lakes, separate points for carp/bullhead, jittered, no jitter
+rngs &lt;- c(1, 7)
+    
+brks &lt;- c(-Inf, 0, 1, 5, 10, Inf)
+labs &lt;- c(&#39;0&#39;, &#39;&lt; 1&#39;, &#39;&lt; 5&#39;, &#39;&lt; 10&#39;, &#39;&gt; 10&#39;)
+
+locs &lt;- ppp %&gt;% 
+  .$ind %&gt;% 
+  .$coord %&gt;% 
+  as.data.frame %&gt;% 
+  select(Dim.1, Dim.2) %&gt;% 
+  rename(
+    one = Dim.1, 
+    two = Dim.2
+  ) %&gt;% 
+  rownames_to_column(&#39;id&#39;)
+
+toplo &lt;- d %&gt;% 
+  select(Carp, Bullhead) %&gt;% 
+  rownames_to_column(&#39;id&#39;) %&gt;% 
+  gather(&#39;var&#39;, &#39;val&#39;, -id) %&gt;% 
+  group_by(id) %&gt;% 
+  nest %&gt;% 
+  mutate(var = map(data, function(x){
+  
+    if(sum(x$val) == 0)
+      rep(&#39;None&#39;, 2)
+    else 
+      x$var
+    
+    } 
+  )) %&gt;% 
+  unnest %&gt;% 
+  mutate(valcut = cut(val, breaks = brks, labels = labs)) %&gt;% 
+  select(id, var, val, valcut) %&gt;% 
+  left_join(locs, by = &#39;id&#39;) %&gt;% 
+  rename(Group = var)
+
+# format fish data to same scale
+
+# legend labels, color palette
+leglabs &lt;- list(expression(0), expression(phantom(&#39;&#39;)&lt;=1), expression(phantom(&#39;&#39;)&lt;=5), expression(phantom(&#39;&#39;)&lt;=10), expression(phantom(&#39;&#39;)&gt;10))
+
+p &lt;- ggord(ppp, vec_ext = 7, size = -1, txt = 4, arrow = 0.3, 
+      repel = T, ellipse = F) + 
+  geom_point(data = toplo, aes(size = valcut, fill = Group), pch = 21, alpha = 1) +
+  scale_size_manual(&#39;Fish kg/net&#39;, values = c(1.5, 2.25, 3, 3.75, 5.5), labels = leglabs) +
+  scale_fill_manual(values = c(&#39;lightblue&#39;, &#39;tomato1&#39;, &#39;yellow2&#39;)) + 
+  mythm +
+  guides(fill = guide_legend(override.aes = list(size = 3)))
+# tiff(&#39;fig3.tif&#39;, height = 5, width = 4, units = &#39;in&#39;, compression = &#39;lzw&#39;, res = 300, family = &#39;serif&#39;)
+p</code></pre>
+<p><img src="README_files/figure-html/Fig3.png" width="60%" style="display: block; margin: auto;" /></p>
+<pre class="r"><code># dev.off()</code></pre>
+</div>
+<div id="mrrp-all-groups" class="section level2">
+<h2>MRRP all groups</h2>
+<pre class="r"><code># MRPP to test differences among groups (by mean and/or variance of dissimilarities)
+# significant values means that groupings were moree different than would be expected by chance
+# delta statistics for each group indicates relative dissimilarity within groups
+# higher delta is more dissimilar within group
+mrpp(tomod, grouping = d$Group)</code></pre>
 <pre><code>## 
 ## Call:
 ## mrpp(dat = tomod, grouping = d$Group) 
@@ -362,7 +726,31 @@ $(document).ready(function () {
 ## Significance of delta: 0.001 
 ## Permutation: free
 ## Number of permutations: 999</code></pre>
-<p><img src="README_files/figure-html/FigS1.png" width="60%" style="display: block; margin: auto;" /></p>
+</div>
+<div id="mrpp-multiple-comparisons" class="section level2">
+<h2>MRPP multiple comparisons</h2>
+<pre class="r"><code># pairwise comparisons of groups with MRPP
+grps &lt;- d$Group %&gt;% unique
+grps &lt;- combn(grps, 2)
+pval &lt;- rep(NA, ncol(grps))
+for(col in 1:ncol(grps)){
+  grp &lt;- d$Group %in% grps[, col, drop = TRUE]
+  res &lt;- mrpp(tomod[grp, ], d$Group[grp])
+  pval[col] &lt;- res$Pvalue
+}
+
+# adjust p-values using holm sequential bonferroni
+pval &lt;- p.adjust(pval, method = &#39;holm&#39;)
+
+# pval as t/f using bonferroni correction
+vecs &lt;- rep(FALSE, ncol(grps))
+vecs[pval &lt; 0.05] &lt;- TRUE
+names(vecs) &lt;- paste(grps[1, ], grps[2, ], sep = &#39;-&#39;)
+
+# group membership based on multiple comparisons
+multcompView::multcompLetters(vecs)$Letters</code></pre>
+<pre><code>## C_prs, B_prs C_abs, B_prs C_prs, B_abs C_abs, B_abs 
+##          &quot;a&quot;          &quot;b&quot;          &quot;b&quot;          &quot;b&quot;</code></pre>
 </div>
 </div>
 

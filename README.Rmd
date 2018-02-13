@@ -2,13 +2,14 @@
 output:
   html_document:
     keep_md: yes
-    toc: no
+    toc: yes
     self_contained: no
+    code_folding: hide
 ---
 
-## README
+# README
 
-```{r echo = F, message = F, warning = F}
+```{r echo = T, message = F, warning = F}
 library(tidyr)
 library(ggplot2)
 library(purrr)
@@ -23,14 +24,14 @@ library(gridExtra)
 library(FactoMineR)
 source('R/funcs.R')
 
-opts_chunk$set(fig.align = 'center', message = F, echo = F, cache = F, dev = 'png', dev.args = list(family = 'serif'), dpi = 400, fig.pos = '!h', warning = F, background = 'white', out.width = '60%',
+opts_chunk$set(fig.align = 'center', message = F, echo = T, cache = F, dev = 'png', dev.args = list(family = 'serif'), dpi = 400, fig.pos = '!h', warning = F, background = 'white', out.width = '60%',
   fig.process = function(x) {
   x2 = sub('-\\d+([.][a-z]+)$', '\\1', x)
   if (file.rename(x, x2)) x2 else x
   })
 ```
 
-#### Files
+## Files
 
 All data created in `R\dat_proc.R`.  Source data in the ignore folder were created elsewhere.
 
@@ -46,7 +47,7 @@ All data created in `R\dat_proc.R`.  Source data in the ignore folder were creat
 
 * `veg_dat.RData` DNR veg transect data from 1992 to present. Format is dow, date, transect, species, and abundance category.  NULL abundance entries are not removed, these are species in the survey but not observed on a transect.  Note that there were no lakes in the dataset that had zero veg.  
 
-#### Summary table
+## Summary table
 
 ```{r sumtab, results = 'asis'}
 # diagnostic plots
@@ -113,8 +114,7 @@ d <- log(1 + d)
 vif_func(d)
 ```
 
-#### Figures
-
+## Fig 1
 ```{r Fig1, fig.height = 7, fig.width = 12}
 library(tidyverse)
 library(maptools)
@@ -238,6 +238,7 @@ print(pinset, vp = v3)
 # dev.off()
 ```
 
+## Fig 2
 ```{r Fig2, fig.height = 3, fig.width = 12}
 ######
 # diagnostic plots
@@ -278,7 +279,8 @@ p3
 # dev.off()
 ```
 
-```{r Fig3_nojit, fig.height = 6, fig.width = 6}
+## Fig 3
+```{r Fig3, fig.height = 6, fig.width = 6}
 
 rev_fishdat <- read.csv("ignore/d2.csv")
 
@@ -368,6 +370,7 @@ p
 # dev.off()
 ```
 
+## MRRP all groups
 ```{r}
 # MRPP to test differences among groups (by mean and/or variance of dissimilarities)
 # significant values means that groupings were moree different than would be expected by chance
@@ -376,37 +379,27 @@ p
 mrpp(tomod, grouping = d$Group)
 ```
 
-```{r FigS1, fig.height = 6, fig.width = 6}
-
-sums <- d %>% 
-  select(Depth, Secchi, Area, SI, ShedArea, Human, Bluegill, Group) %>% 
-  gather('var', 'val', -Group)
-
-for(vr in seq_along(unique(sums$var))){
-  
-  gt <- unique(sums$var)[vr]
-  
-  toplo <- sums %>% 
-    filter(var %in% gt)
-  
-  p <- ggplot(toplo, aes(x = Group, y = val)) + 
-    geom_boxplot() + 
-    theme_bw() +
-    theme(strip.background = element_blank(), axis.title.x = element_blank())
-  
-  if(!gt %in% 'Human')
-    p <- p + scale_y_log10(gt)
-  else 
-    p <- p + scale_y_continuous(gt)
-  
-  assign(paste0('p', vr), p)
-
-
+## MRPP multiple comparisons
+```{r}
+# pairwise comparisons of groups with MRPP
+grps <- d$Group %>% unique
+grps <- combn(grps, 2)
+pval <- rep(NA, ncol(grps))
+for(col in 1:ncol(grps)){
+  grp <- d$Group %in% grps[, col, drop = TRUE]
+  res <- mrpp(tomod[grp, ], d$Group[grp])
+  pval[col] <- res$Pvalue
 }
 
-grid.arrange(
-  arrangeGrob(p1, p2, p3, p4, p5, p6, p7, ncol = 2)
-)
+# adjust p-values using holm sequential bonferroni
+pval <- p.adjust(pval, method = 'holm')
 
+# pval as t/f using bonferroni correction
+vecs <- rep(FALSE, ncol(grps))
+vecs[pval < 0.05] <- TRUE
+names(vecs) <- paste(grps[1, ], grps[2, ], sep = '-')
+
+# group membership based on multiple comparisons
+multcompView::multcompLetters(vecs)$Letters
 ```
 
