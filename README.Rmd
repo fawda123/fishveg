@@ -385,10 +385,12 @@ mrpp(tomod, grouping = d$Group)
 grps <- d$Group %>% unique
 grps <- combn(grps, 2)
 pval <- rep(NA, ncol(grps))
+aval <- rep(NA, ncol(grps))
 for(col in 1:ncol(grps)){
   grp <- d$Group %in% grps[, col, drop = TRUE]
   res <- mrpp(tomod[grp, ], d$Group[grp])
   pval[col] <- res$Pvalue
+  aval[col] <- res$A
 }
 
 # adjust p-values using holm sequential bonferroni
@@ -401,5 +403,7 @@ names(vecs) <- paste(grps[1, ], grps[2, ], sep = '-')
 
 # group membership based on multiple comparisons
 multcompView::multcompLetters(vecs)$Letters
+
+rbind(grps, round(aval, 4))
 ```
 

@@ -733,10 +733,12 @@ mrpp(tomod, grouping = d$Group)</code></pre>
 grps &lt;- d$Group %&gt;% unique
 grps &lt;- combn(grps, 2)
 pval &lt;- rep(NA, ncol(grps))
+aval &lt;- rep(NA, ncol(grps))
 for(col in 1:ncol(grps)){
   grp &lt;- d$Group %in% grps[, col, drop = TRUE]
   res &lt;- mrpp(tomod[grp, ], d$Group[grp])
   pval[col] &lt;- res$Pvalue
+  aval[col] &lt;- res$A
 }
 
 # adjust p-values using holm sequential bonferroni
@@ -751,6 +753,15 @@ names(vecs) &lt;- paste(grps[1, ], grps[2, ], sep = &#39;-&#39;)
 multcompView::multcompLetters(vecs)$Letters</code></pre>
 <pre><code>## C_prs, B_prs C_abs, B_prs C_prs, B_abs C_abs, B_abs 
 ##          &quot;a&quot;          &quot;b&quot;          &quot;b&quot;          &quot;b&quot;</code></pre>
+<pre class="r"><code>rbind(grps, round(aval, 4))</code></pre>
+<pre><code>##      [,1]           [,2]           [,3]           [,4]          
+## [1,] &quot;C_prs, B_prs&quot; &quot;C_prs, B_prs&quot; &quot;C_prs, B_prs&quot; &quot;C_abs, B_prs&quot;
+## [2,] &quot;C_abs, B_prs&quot; &quot;C_prs, B_abs&quot; &quot;C_abs, B_abs&quot; &quot;C_prs, B_abs&quot;
+## [3,] &quot;0.0206&quot;       &quot;0.0295&quot;       &quot;0.0216&quot;       &quot;0.0099&quot;      
+##      [,5]           [,6]          
+## [1,] &quot;C_abs, B_prs&quot; &quot;C_prs, B_abs&quot;
+## [2,] &quot;C_abs, B_abs&quot; &quot;C_abs, B_abs&quot;
+## [3,] &quot;0.0034&quot;       &quot;0.0016&quot;</code></pre>
 </div>
 </div>
 

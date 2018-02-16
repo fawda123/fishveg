@@ -512,10 +512,12 @@ mrpp(tomod, grouping = d$Group)
 grps <- d$Group %>% unique
 grps <- combn(grps, 2)
 pval <- rep(NA, ncol(grps))
+aval <- rep(NA, ncol(grps))
 for(col in 1:ncol(grps)){
   grp <- d$Group %in% grps[, col, drop = TRUE]
   res <- mrpp(tomod[grp, ], d$Group[grp])
   pval[col] <- res$Pvalue
+  aval[col] <- res$A
 }
 
 # adjust p-values using holm sequential bonferroni
@@ -533,5 +535,20 @@ multcompView::multcompLetters(vecs)$Letters
 ```
 ## C_prs, B_prs C_abs, B_prs C_prs, B_abs C_abs, B_abs 
 ##          "a"          "b"          "b"          "b"
+```
+
+```r
+rbind(grps, round(aval, 4))
+```
+
+```
+##      [,1]           [,2]           [,3]           [,4]          
+## [1,] "C_prs, B_prs" "C_prs, B_prs" "C_prs, B_prs" "C_abs, B_prs"
+## [2,] "C_abs, B_prs" "C_prs, B_abs" "C_abs, B_abs" "C_prs, B_abs"
+## [3,] "0.0206"       "0.0295"       "0.0216"       "0.0099"      
+##      [,5]           [,6]          
+## [1,] "C_abs, B_prs" "C_prs, B_abs"
+## [2,] "C_abs, B_abs" "C_abs, B_abs"
+## [3,] "0.0034"       "0.0016"
 ```
 
