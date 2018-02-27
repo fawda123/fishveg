@@ -262,7 +262,11 @@ toplo <- select(rev_fishdat,
 # create plot
 p3 <- ggplot(toplo, aes(x = val, y = SpeciesRichness, fill = Ecoregion, colour = Ecoregion)) + 
   geom_point(pch = 21, alpha = 0.8) + 
-  scale_x_log10('Value, log10') +
+  scale_x_log10('Value, log10',
+                breaks = scales::trans_breaks("log10", function(x) 10^x),
+                labels = scales::trans_format("log10", scales::math_format(10^.x))
+                ) +
+  annotation_logticks(sides = "b") +
   scale_y_continuous('Plant richness', expand = c(0, 0)) + 
   stat_smooth(method ='lm', colour = 'black', se = TRUE) + 
   facet_wrap( ~ var, ncol = 9, scales = 'free_x') +
@@ -270,8 +274,11 @@ p3 <- ggplot(toplo, aes(x = val, y = SpeciesRichness, fill = Ecoregion, colour =
   theme(
     legend.position = 'top',
     legend.title = element_blank(),
-    strip.background = element_rect(fill = "white")
-    )
+    axis.text.x = element_text(size = 6),
+    strip.background = element_rect(fill = "white"), 
+    panel.grid.minor = element_blank(), 
+    axis.ticks.x = element_blank()
+  )
 
 # save
 # tiff('fig3.tif', height = 5, width = 12, units = 'in', compression = 'lzw', res = 300, family = 'serif')
