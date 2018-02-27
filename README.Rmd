@@ -250,7 +250,10 @@ rev_fishdat <- read.csv("ignore/d2.csv")
 toplo <- select(rev_fishdat, 
   SpeciesRichness, Carp, Bullhead, Bluegill, Secchi, SDI, Human, Area, ShedArea, Ecoregion, Depth
   ) %>% 
-  rename(SI = SDI) %>% 
+  rename(
+    SI = SDI,
+    Phuman = Human
+    ) %>% 
   mutate(
     Carp = 1 + Carp, 
     Bullhead = 1 + Bullhead, 
@@ -266,7 +269,7 @@ p3 <- ggplot(toplo, aes(x = val, y = SpeciesRichness, fill = Ecoregion, colour =
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x))
                 ) +
-  annotation_logticks(sides = "b") +
+  # annotation_logticks(sides = "b") +
   scale_y_continuous('Plant richness', expand = c(0, 0)) + 
   stat_smooth(method ='lm', colour = 'black', se = TRUE) + 
   facet_wrap( ~ var, ncol = 9, scales = 'free_x') +
@@ -276,8 +279,7 @@ p3 <- ggplot(toplo, aes(x = val, y = SpeciesRichness, fill = Ecoregion, colour =
     legend.title = element_blank(),
     axis.text.x = element_text(size = 6),
     strip.background = element_rect(fill = "white"), 
-    panel.grid.minor = element_blank(), 
-    axis.ticks.x = element_blank()
+    panel.grid.minor = element_blank()
   )
 
 # save
@@ -295,7 +297,10 @@ rev_fishdat <- read.csv("ignore/d2.csv")
 d<- select(rev_fishdat, 
   SpeciesRichness, Carp, Bullhead, Bluegill, Secchi, SDI, Human, Area, ShedArea, Ecoregion, Depth
   ) %>% 
-  rename(SI = SDI) %>% 
+  rename(
+    SI = SDI,
+    Phuman = Human
+    ) %>% 
   mutate(
     Bluegill = 1 + Bluegill,
     Ecoregion = factor(Ecoregion, levels = c('Forest', 'Plain'), labels = c('Eastern Temperate Forests', 'Great Plains'))
@@ -310,7 +315,7 @@ d <- d %>%
   unite('Group', carp_cat, bull_cat, sep = ', ')
 
 tomod <- d %>% 
-  select(Bluegill, Depth, Secchi, Area, SI, ShedArea, Human) %>% 
+  select(Bluegill, Depth, Secchi, Area, SI, ShedArea, Phuman) %>% 
   decostand(method = 'standardize')
 ppp <- PCA(tomod, scale.unit = F, graph = F)
 dimdesc(ppp, axes = c(1:3))

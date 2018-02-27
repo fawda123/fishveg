@@ -305,7 +305,10 @@ rev_fishdat <- read.csv("ignore/d2.csv")
 toplo <- select(rev_fishdat, 
   SpeciesRichness, Carp, Bullhead, Bluegill, Secchi, SDI, Human, Area, ShedArea, Ecoregion, Depth
   ) %>% 
-  rename(SI = SDI) %>% 
+  rename(
+    SI = SDI,
+    Phuman = Human
+    ) %>% 
   mutate(
     Carp = 1 + Carp, 
     Bullhead = 1 + Bullhead, 
@@ -321,7 +324,7 @@ p3 <- ggplot(toplo, aes(x = val, y = SpeciesRichness, fill = Ecoregion, colour =
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x))
                 ) +
-  annotation_logticks(sides = "b") +
+  # annotation_logticks(sides = "b") +
   scale_y_continuous('Plant richness', expand = c(0, 0)) + 
   stat_smooth(method ='lm', colour = 'black', se = TRUE) + 
   facet_wrap( ~ var, ncol = 9, scales = 'free_x') +
@@ -331,8 +334,7 @@ p3 <- ggplot(toplo, aes(x = val, y = SpeciesRichness, fill = Ecoregion, colour =
     legend.title = element_blank(),
     axis.text.x = element_text(size = 6),
     strip.background = element_rect(fill = "white"), 
-    panel.grid.minor = element_blank(), 
-    axis.ticks.x = element_blank()
+    panel.grid.minor = element_blank()
   )
 
 # save
@@ -355,7 +357,10 @@ rev_fishdat <- read.csv("ignore/d2.csv")
 d<- select(rev_fishdat, 
   SpeciesRichness, Carp, Bullhead, Bluegill, Secchi, SDI, Human, Area, ShedArea, Ecoregion, Depth
   ) %>% 
-  rename(SI = SDI) %>% 
+  rename(
+    SI = SDI,
+    Phuman = Human
+    ) %>% 
   mutate(
     Bluegill = 1 + Bluegill,
     Ecoregion = factor(Ecoregion, levels = c('Forest', 'Plain'), labels = c('Eastern Temperate Forests', 'Great Plains'))
@@ -370,7 +375,7 @@ d <- d %>%
   unite('Group', carp_cat, bull_cat, sep = ', ')
 
 tomod <- d %>% 
-  select(Bluegill, Depth, Secchi, Area, SI, ShedArea, Human) %>% 
+  select(Bluegill, Depth, Secchi, Area, SI, ShedArea, Phuman) %>% 
   decostand(method = 'standardize')
 ppp <- PCA(tomod, scale.unit = F, graph = F)
 dimdesc(ppp, axes = c(1:3))
@@ -386,7 +391,7 @@ dimdesc(ppp, axes = c(1:3))
 ## Secchi     0.5682525 3.508253e-22
 ## ShedArea   0.5148838 7.483030e-18
 ## Bluegill   0.3366858 7.480955e-08
-## Human     -0.3085629 9.321755e-07
+## Phuman    -0.3085629 9.321755e-07
 ## 
 ## 
 ## $Dim.2
@@ -394,7 +399,7 @@ dimdesc(ppp, axes = c(1:3))
 ##          correlation      p.value
 ## ShedArea   0.6014935 2.666295e-25
 ## Area       0.5103664 1.609032e-17
-## Human      0.4193134 9.127571e-12
+## Phuman     0.4193134 9.127571e-12
 ## SI         0.4108897 2.576117e-11
 ## Bluegill  -0.4404832 5.903931e-13
 ## Depth     -0.4946689 2.110547e-16
@@ -404,7 +409,7 @@ dimdesc(ppp, axes = c(1:3))
 ## $Dim.3
 ## $Dim.3$quanti
 ##          correlation      p.value
-## Human      0.8010119 1.271334e-55
+## Phuman     0.8010119 1.271334e-55
 ## Depth      0.3189660 3.777135e-07
 ## ShedArea   0.2441587 1.206597e-04
 ## Secchi     0.1748791 6.273497e-03
@@ -541,7 +546,7 @@ multcompView::multcompLetters(vecs)$Letters
 
 ```
 ## C_prs, B_prs C_abs, B_prs C_prs, B_abs C_abs, B_abs 
-##          "a"          "b"          "b"          "b"
+##          "a"          "b"          "c"         "bc"
 ```
 
 ```r
