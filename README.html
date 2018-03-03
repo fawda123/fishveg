@@ -764,7 +764,7 @@ names(vecs) &lt;- paste(grps[1, ], grps[2, ], sep = &#39;-&#39;)
 # group membership based on multiple comparisons
 multcompView::multcompLetters(vecs)$Letters</code></pre>
 <pre><code>## C_prs, B_prs C_abs, B_prs C_prs, B_abs C_abs, B_abs 
-##          &quot;a&quot;          &quot;b&quot;          &quot;c&quot;         &quot;bc&quot;</code></pre>
+##          &quot;a&quot;          &quot;b&quot;          &quot;b&quot;          &quot;b&quot;</code></pre>
 <pre class="r"><code>rbind(grps, round(aval, 4))</code></pre>
 <pre><code>##      [,1]           [,2]           [,3]           [,4]          
 ## [1,] &quot;C_prs, B_prs&quot; &quot;C_prs, B_prs&quot; &quot;C_prs, B_prs&quot; &quot;C_abs, B_prs&quot;
@@ -774,6 +774,69 @@ multcompView::multcompLetters(vecs)$Letters</code></pre>
 ## [1,] &quot;C_abs, B_prs&quot; &quot;C_prs, B_abs&quot;
 ## [2,] &quot;C_abs, B_abs&quot; &quot;C_abs, B_abs&quot;
 ## [3,] &quot;0.0034&quot;       &quot;0.0016&quot;</code></pre>
+<pre class="r"><code>sums &lt;- d %&gt;% 
+  select(Depth, Secchi, Area, SI, ShedArea, Phuman, Bluegill, Group) %&gt;% 
+  gather(&#39;var&#39;, &#39;val&#39;, -Group) %&gt;% 
+  mutate(
+    Group = factor(Group, 
+                      levels = c(&#39;C_abs, B_abs&#39;, &#39;C_abs, B_prs&#39;, &#39;C_prs, B_abs&#39;, &#39;C_prs, B_prs&#39;), 
+                      labels = c(&#39;None&#39;, &#39;Bullhead&#39;, &#39;Carp&#39;, &#39;Carp and Bullhead&#39;)
+    )
+  )
+vrs &lt;- sums$var %&gt;% 
+  unique %&gt;% 
+  sort
+
+for(vr in vrs){
+
+  toplo &lt;- sums %&gt;% 
+    filter(var %in% vr)
+  
+  p &lt;- ggplot(toplo, aes(x = Group, y = val)) + 
+    geom_boxplot(fill = &#39;lightgrey&#39;) + 
+    theme_bw(base_family = &#39;serif&#39;) +
+    theme(strip.background = element_blank(), axis.title.x = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 40, size = 6, hjust = 1, vjust = 1))
+  
+  if(!vr %in% &#39;Phuman&#39;)
+    p &lt;- p + 
+      scale_y_log10(vr,
+                  breaks = scales::trans_breaks(&quot;log10&quot;, function(x) 10^x),
+                  labels = scales::trans_format(&quot;log10&quot;, scales::math_format(10^.x))
+                  )
+    
+  else
+    p &lt;- p + scale_y_continuous(vr)
+  
+  ind &lt;- which(vrs == vr)
+  assign(paste0(&#39;p&#39;, ind), p)
+
+
+}
+
+# fix widths
+# align widths of plots in first column, first two
+pA &lt;- ggplot_gtable(ggplot_build(p1))
+pB &lt;- ggplot_gtable(ggplot_build(p2))
+pC &lt;- ggplot_gtable(ggplot_build(p3))
+pD &lt;- ggplot_gtable(ggplot_build(p4))
+pE &lt;- ggplot_gtable(ggplot_build(p5))
+pF &lt;- ggplot_gtable(ggplot_build(p6))
+pG &lt;- ggplot_gtable(ggplot_build(p7))
+
+maxWidth = grid::unit.pmax(pA$widths[2:3], pB$widths[2:3], pC$widths[2:3], pD$widths[2:3], pE$widths[2:3], pF$widths[2:3], pG$widths[2:3])
+
+pA$widths[2:3] &lt;- maxWidth
+pB$widths[2:3] &lt;- maxWidth
+pC$widths[2:3] &lt;- maxWidth
+pD$widths[2:3] &lt;- maxWidth
+pE$widths[2:3] &lt;- maxWidth
+pF$widths[2:3] &lt;- maxWidth
+pG$widths[2:3] &lt;- maxWidth
+
+grid.arrange(
+  arrangeGrob(pA, pB, pC, pD, pE, pF, pG, ncol = 2)
+)</code></pre>
+<p><img src="README_files/figure-html/boxplots.png" width="60%" style="display: block; margin: auto;" /></p>
 </div>
 </div>
 

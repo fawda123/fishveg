@@ -419,3 +419,68 @@ multcompView::multcompLetters(vecs)$Letters
 rbind(grps, round(aval, 4))
 ```
 
+```{r boxplots, fig.height = 8, fig.width = 8}
+sums <- d %>% 
+  select(Depth, Secchi, Area, SI, ShedArea, Phuman, Bluegill, Group) %>% 
+  gather('var', 'val', -Group) %>% 
+  mutate(
+    Group = factor(Group, 
+                      levels = c('C_abs, B_abs', 'C_abs, B_prs', 'C_prs, B_abs', 'C_prs, B_prs'), 
+                      labels = c('None', 'Bullhead', 'Carp', 'Carp and Bullhead')
+    )
+  )
+vrs <- sums$var %>% 
+  unique %>% 
+  sort
+
+for(vr in vrs){
+
+  toplo <- sums %>% 
+    filter(var %in% vr)
+  
+  p <- ggplot(toplo, aes(x = Group, y = val)) + 
+    geom_boxplot(fill = 'lightgrey') + 
+    theme_bw(base_family = 'serif') +
+    theme(strip.background = element_blank(), axis.title.x = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 40, size = 6, hjust = 1, vjust = 1))
+  
+  if(!vr %in% 'Phuman')
+    p <- p + 
+      scale_y_log10(vr,
+                  breaks = scales::trans_breaks("log10", function(x) 10^x),
+                  labels = scales::trans_format("log10", scales::math_format(10^.x))
+                  )
+    
+  else
+    p <- p + scale_y_continuous(vr)
+  
+  ind <- which(vrs == vr)
+  assign(paste0('p', ind), p)
+
+
+}
+
+# fix widths
+# align widths of plots in first column, first two
+pA <- ggplot_gtable(ggplot_build(p1))
+pB <- ggplot_gtable(ggplot_build(p2))
+pC <- ggplot_gtable(ggplot_build(p3))
+pD <- ggplot_gtable(ggplot_build(p4))
+pE <- ggplot_gtable(ggplot_build(p5))
+pF <- ggplot_gtable(ggplot_build(p6))
+pG <- ggplot_gtable(ggplot_build(p7))
+
+maxWidth = grid::unit.pmax(pA$widths[2:3], pB$widths[2:3], pC$widths[2:3], pD$widths[2:3], pE$widths[2:3], pF$widths[2:3], pG$widths[2:3])
+
+pA$widths[2:3] <- maxWidth
+pB$widths[2:3] <- maxWidth
+pC$widths[2:3] <- maxWidth
+pD$widths[2:3] <- maxWidth
+pE$widths[2:3] <- maxWidth
+pF$widths[2:3] <- maxWidth
+pG$widths[2:3] <- maxWidth
+
+grid.arrange(
+  arrangeGrob(pA, pB, pC, pD, pE, pF, pG, ncol = 2)
+)
+```
+
