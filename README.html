@@ -145,7 +145,9 @@ $(document).ready(function () {
 <li><a href="#fig-1">Fig 1</a></li>
 <li><a href="#fig-2">Fig 2</a></li>
 <li><a href="#fig-3">Fig 3</a></li>
-<li><a href="#mrrp-all-groups">MRRP all groups</a></li>
+<li><a href="#fig-4">Fig 4</a></li>
+<li><a href="#fig-s1">Fig S1</a></li>
+<li><a href="#mrpp-all-groups">MRPP all groups</a></li>
 <li><a href="#mrpp-multiple-comparisons">MRPP multiple comparisons</a></li>
 </ul></li>
 </ul>
@@ -187,29 +189,19 @@ opts_chunk$set(fig.align = &#39;center&#39;, message = F, echo = T, cache = F, d
 <div id="summary-table" class="section level2">
 <h2>Summary table</h2>
 <pre class="r"><code># diagnostic plots
-data(map_dat)
 
-fishdat &lt;- 
+rev_fishdat &lt;- read.csv(&#39;raw/d2.csv&#39;)
 
 # format data
-totab &lt;- select(fishdat, 
-                S_rich, common.carp_GN, black.bullhead_TN, bluegill_TN, secchim, sdi, phuman, aream2, shedaream2, ecoreg, depthm
-) %&gt;% 
-  mutate(
-    ecoreg = factor(ecoreg, levels = c(&#39;eastern temperate forests&#39;, &#39;great plains&#39;), labels = c(&#39;ETF&#39;, &#39;GP&#39;))
+totab &lt;- select(rev_fishdat, 
+  SpeciesRichness, Carp, Bullhead, Bluegill, Secchi, SDI, Human, Area, ShedArea, Ecoregion, Depth
   ) %&gt;% 
   rename(
-    SpeciesRichness = S_rich, 
-    Carp = common.carp_GN,
-    Bullhead = black.bullhead_TN, 
-    Bluegill = bluegill_TN,
-    Secchi = secchim, 
-    SDI = sdi, 
-    Human = phuman, 
-    Area = aream2,
-    ShedArea = shedaream2,
-    Depth = depthm, 
-    Ecoregion = ecoreg
+    SI = SDI,
+    Phuman = Human
+  ) %&gt;% 
+  mutate(
+    Ecoregion = factor(Ecoregion, levels = c(&#39;Forest&#39;, &#39;Plain&#39;), labels = c(&#39;ETF&#39;, &#39;GP&#39;))
   ) %&gt;% 
   mutate(
     Area = Area * 1e-6,
@@ -217,7 +209,7 @@ totab &lt;- select(fishdat,
   ) %&gt;% 
   gather(&#39;Variable&#39;, &#39;val&#39;, -Ecoregion) %&gt;% 
   mutate(Variable = factor(Variable, 
-                      levels = c(&#39;SpeciesRichness&#39;, &#39;Carp&#39;, &#39;Bullhead&#39;, &#39;Bluegill&#39;, &#39;Area&#39;, &#39;Depth&#39;, &#39;Human&#39;, &#39;SDI&#39;, &#39;Secchi&#39;, &#39;ShedArea&#39;))
+                      levels = c(&#39;SpeciesRichness&#39;, &#39;Carp&#39;, &#39;Bullhead&#39;, &#39;Bluegill&#39;, &#39;Area&#39;, &#39;Depth&#39;, &#39;Phuman&#39;, &#39;SI&#39;, &#39;Secchi&#39;, &#39;ShedArea&#39;))
          ) %&gt;% 
   group_by(Ecoregion, Variable) %&gt;% 
   summarise(
@@ -236,7 +228,7 @@ totab &lt;- select(fishdat,
   ) %&gt;% 
   unite(&#39;Ave. (Med.)&#39;, Average, Median, sep = &#39; &#39;)
 
-write.csv(totab, &#39;ignore/summtab.csv&#39;, quote = F, row.names = F)
+write.csv(totab, &#39;raw/table1.csv&#39;, quote = F, row.names = F)
 kable(totab)</code></pre>
 <table>
 <thead>
@@ -252,126 +244,126 @@ kable(totab)</code></pre>
 <tr class="odd">
 <td align="left">ETF</td>
 <td align="left">SpeciesRichness</td>
-<td align="left">10.3 (10)</td>
-<td align="left">27.6</td>
-<td align="left">0 / 24</td>
+<td align="left">10.5 (10)</td>
+<td align="left">25.2</td>
+<td align="left">0 / 23</td>
 </tr>
 <tr class="even">
 <td align="left"></td>
 <td align="left">Carp</td>
-<td align="left">2.1 (0.4)</td>
-<td align="left">23</td>
+<td align="left">2.2 (0.4)</td>
+<td align="left">24.8</td>
 <td align="left">0 / 45.1</td>
 </tr>
 <tr class="odd">
 <td align="left"></td>
 <td align="left">Bullhead</td>
-<td align="left">1.4 (0.1)</td>
-<td align="left">42.6</td>
-<td align="left">0 / 87.4</td>
+<td align="left">1.2 (0.1)</td>
+<td align="left">16.1</td>
+<td align="left">0 / 39.2</td>
 </tr>
 <tr class="even">
 <td align="left"></td>
 <td align="left">Bluegill</td>
-<td align="left">1.9 (1.1)</td>
-<td align="left">6.7</td>
-<td align="left">0 / 18</td>
+<td align="left">1.7 (1.2)</td>
+<td align="left">2</td>
+<td align="left">0 / 5.7</td>
 </tr>
 <tr class="odd">
 <td align="left"></td>
 <td align="left">Area</td>
-<td align="left">2.5 (1.4)</td>
-<td align="left">12.3</td>
-<td align="left">0.1 / 22.5</td>
+<td align="left">1.8 (1.2)</td>
+<td align="left">3.7</td>
+<td align="left">0.1 / 9.4</td>
 </tr>
 <tr class="even">
 <td align="left"></td>
 <td align="left">Depth</td>
-<td align="left">11.2 (9.7)</td>
-<td align="left">50.5</td>
-<td align="left">1.8 / 34.2</td>
+<td align="left">11.3 (10.7)</td>
+<td align="left">44.4</td>
+<td align="left">1.8 / 32.1</td>
 </tr>
 <tr class="odd">
 <td align="left"></td>
-<td align="left">Human</td>
+<td align="left">Phuman</td>
 <td align="left">0.6 (0.6)</td>
 <td align="left">0</td>
-<td align="left">0.1 / 1</td>
+<td align="left">0.3 / 1</td>
 </tr>
 <tr class="even">
 <td align="left"></td>
-<td align="left">SDI</td>
+<td align="left">SI</td>
 <td align="left">1.7 (1.5)</td>
-<td align="left">0.4</td>
-<td align="left">1.1 / 4.4</td>
+<td align="left">0.3</td>
+<td align="left">1.1 / 3.8</td>
 </tr>
 <tr class="odd">
 <td align="left"></td>
 <td align="left">Secchi</td>
-<td align="left">1.6 (1.4)</td>
+<td align="left">1.5 (1.3)</td>
 <td align="left">0.7</td>
 <td align="left">0.3 / 5.4</td>
 </tr>
 <tr class="even">
 <td align="left"></td>
 <td align="left">ShedArea</td>
-<td align="left">112.5 (28.9)</td>
-<td align="left">77601.3</td>
-<td align="left">0.2 / 2808.1</td>
+<td align="left">25 (19.1)</td>
+<td align="left">535.9</td>
+<td align="left">0.8 / 98.6</td>
 </tr>
 <tr class="odd">
 <td align="left">GP</td>
 <td align="left">SpeciesRichness</td>
-<td align="left">3.6 (3)</td>
+<td align="left">3.3 (2)</td>
 <td align="left">13.6</td>
 <td align="left">0 / 16</td>
 </tr>
 <tr class="even">
 <td align="left"></td>
 <td align="left">Carp</td>
-<td align="left">6.1 (3.7)</td>
-<td align="left">47.8</td>
+<td align="left">6.5 (4.4)</td>
+<td align="left">51.5</td>
 <td align="left">0 / 36</td>
 </tr>
 <tr class="odd">
 <td align="left"></td>
 <td align="left">Bullhead</td>
-<td align="left">5.8 (1.9)</td>
-<td align="left">95</td>
-<td align="left">0 / 48.4</td>
+<td align="left">5.5 (2)</td>
+<td align="left">78.7</td>
+<td align="left">0 / 39.6</td>
 </tr>
 <tr class="even">
 <td align="left"></td>
 <td align="left">Bluegill</td>
-<td align="left">0.5 (0.1)</td>
-<td align="left">1.8</td>
-<td align="left">0 / 10.8</td>
+<td align="left">0.3 (0.1)</td>
+<td align="left">0.5</td>
+<td align="left">0 / 5.1</td>
 </tr>
 <tr class="odd">
 <td align="left"></td>
 <td align="left">Area</td>
-<td align="left">2.3 (1.5)</td>
-<td align="left">6.7</td>
-<td align="left">0.2 / 10.9</td>
+<td align="left">1.8 (1.5)</td>
+<td align="left">2.1</td>
+<td align="left">0.2 / 7.9</td>
 </tr>
 <tr class="even">
 <td align="left"></td>
 <td align="left">Depth</td>
-<td align="left">4.7 (3.4)</td>
-<td align="left">13.7</td>
+<td align="left">4.6 (3)</td>
+<td align="left">12.9</td>
 <td align="left">1.5 / 25.3</td>
 </tr>
 <tr class="odd">
 <td align="left"></td>
-<td align="left">Human</td>
+<td align="left">Phuman</td>
 <td align="left">0.7 (0.8)</td>
 <td align="left">0</td>
 <td align="left">0.4 / 0.9</td>
 </tr>
 <tr class="even">
 <td align="left"></td>
-<td align="left">SDI</td>
-<td align="left">1.7 (1.5)</td>
+<td align="left">SI</td>
+<td align="left">1.6 (1.4)</td>
 <td align="left">0.3</td>
 <td align="left">1 / 3.5</td>
 </tr>
@@ -385,13 +377,13 @@ kable(totab)</code></pre>
 <tr class="even">
 <td align="left"></td>
 <td align="left">ShedArea</td>
-<td align="left">34.1 (10.8)</td>
-<td align="left">2134.9</td>
-<td align="left">1.2 / 249.4</td>
+<td align="left">21.4 (9.1)</td>
+<td align="left">631.9</td>
+<td align="left">1.4 / 82.2</td>
 </tr>
 </tbody>
 </table>
-<pre class="r"><code>merged_2&lt;-read.csv(&quot;ignore/merged_2.csv&quot;)
+<pre class="r"><code>merged_2&lt;-read.csv(&quot;raw/merged_2.csv&quot;)
 d &lt;- merged_2[,c(&quot;common.carp_GN&quot;, &quot;black.bullhead_TN&quot;, &quot;bluegill_TN&quot;, 
                  &quot;secchim&quot;, &quot;sdi&quot;, &quot;phuman&quot;, &quot;aream2&quot;, &quot;shedaream2&quot;, &quot;depthm&quot;)]
 names(d) &lt;- c(&quot;Carp&quot;, &quot;Bullhead&quot;, &quot;Bluegill&quot;, &quot;Secchi&quot;, &quot;SDI&quot;, 
@@ -543,7 +535,7 @@ print(pinset, vp = v3)</code></pre>
 # diagnostic plots
 data(map_dat)
 
-rev_fishdat &lt;- read.csv(&quot;ignore/d2.csv&quot;)
+rev_fishdat &lt;- read.csv(&quot;raw/d2.csv&quot;)
 
 # format data
 toplo &lt;- select(rev_fishdat, 
@@ -589,7 +581,7 @@ p3</code></pre>
 </div>
 <div id="fig-3" class="section level2">
 <h2>Fig 3</h2>
-<pre class="r"><code>rev_fishdat &lt;- read.csv(&quot;ignore/d2.csv&quot;)
+<pre class="r"><code>rev_fishdat &lt;- read.csv(&quot;raw/d2.csv&quot;)
 
 # format data
 d&lt;- select(rev_fishdat, 
@@ -615,41 +607,141 @@ d &lt;- d %&gt;%
 tomod &lt;- d %&gt;% 
   select(Bluegill, Depth, Secchi, Area, SI, ShedArea, Phuman) %&gt;% 
   decostand(method = &#39;standardize&#39;)
-ppp &lt;- PCA(tomod, scale.unit = F, graph = F)
-dimdesc(ppp, axes = c(1:3))</code></pre>
-<pre><code>## $Dim.1
-## $Dim.1$quanti
-##          correlation      p.value
-## Area       0.7003128 3.807019e-37
-## SI         0.6913952 7.004454e-36
-## Depth      0.6681614 8.605820e-33
-## Secchi     0.5682525 3.508253e-22
-## ShedArea   0.5148838 7.483030e-18
-## Bluegill   0.3366858 7.480955e-08
-## Phuman    -0.3085629 9.321755e-07
-## 
-## 
-## $Dim.2
-## $Dim.2$quanti
-##          correlation      p.value
-## ShedArea   0.6014935 2.666295e-25
-## Area       0.5103664 1.609032e-17
-## Phuman     0.4193134 9.127571e-12
-## SI         0.4108897 2.576117e-11
-## Bluegill  -0.4404832 5.903931e-13
-## Depth     -0.4946689 2.110547e-16
-## Secchi    -0.6035959 1.645328e-25
-## 
-## 
-## $Dim.3
-## $Dim.3$quanti
-##          correlation      p.value
-## Phuman     0.8010119 1.271334e-55
-## Depth      0.3189660 3.777135e-07
-## ShedArea   0.2441587 1.206597e-04
-## Secchi     0.1748791 6.273497e-03
-## Bluegill   0.1491421 2.002227e-02
-## SI        -0.2379305 1.812935e-04</code></pre>
+ppp &lt;- PCA(tomod, scale.unit = F, graph = F)</code></pre>
+<p>Eigen values:</p>
+<pre class="r"><code>ppp$eig %&gt;% round(3) %&gt;% kable</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th align="right">eigenvalue</th>
+<th align="right">percentage of variance</th>
+<th align="right">cumulative percentage of variance</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>comp 1</td>
+<td align="right">2.202</td>
+<td align="right">31.593</td>
+<td align="right">31.593</td>
+</tr>
+<tr class="even">
+<td>comp 2</td>
+<td align="right">1.763</td>
+<td align="right">25.285</td>
+<td align="right">56.878</td>
+</tr>
+<tr class="odd">
+<td>comp 3</td>
+<td align="right">0.921</td>
+<td align="right">13.206</td>
+<td align="right">70.084</td>
+</tr>
+<tr class="even">
+<td>comp 4</td>
+<td align="right">0.828</td>
+<td align="right">11.881</td>
+<td align="right">81.965</td>
+</tr>
+<tr class="odd">
+<td>comp 5</td>
+<td align="right">0.541</td>
+<td align="right">7.761</td>
+<td align="right">89.726</td>
+</tr>
+<tr class="even">
+<td>comp 6</td>
+<td align="right">0.413</td>
+<td align="right">5.930</td>
+<td align="right">95.656</td>
+</tr>
+<tr class="odd">
+<td>comp 7</td>
+<td align="right">0.303</td>
+<td align="right">4.344</td>
+<td align="right">100.000</td>
+</tr>
+<tr class="even">
+<td>Loadings:</td>
+<td align="right"></td>
+<td align="right"></td>
+<td align="right"></td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>out &lt;- ppp$var$coord %&gt;% 
+  round(3) %&gt;% 
+  as.data.frame %&gt;% 
+  select(-Dim.5) %&gt;% 
+  rename_(.dots = setNames(names(.), gsub(&#39;^Dim\\.&#39;, &#39;Comp &#39;, names(.)))) %&gt;% 
+  rownames_to_column(&#39;var&#39;) %&gt;% 
+  arrange(var)
+
+write.csv(out, &#39;raw/table4.csv&#39;, quote = F, row.names = F)  
+kable(out)</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">var</th>
+<th align="right">Comp 1</th>
+<th align="right">Comp 2</th>
+<th align="right">Comp 3</th>
+<th align="right">Comp 4</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Area</td>
+<td align="right">0.699</td>
+<td align="right">0.509</td>
+<td align="right">-0.109</td>
+<td align="right">0.047</td>
+</tr>
+<tr class="even">
+<td align="left">Bluegill</td>
+<td align="right">0.336</td>
+<td align="right">-0.440</td>
+<td align="right">0.149</td>
+<td align="right">0.814</td>
+</tr>
+<tr class="odd">
+<td align="left">Depth</td>
+<td align="right">0.667</td>
+<td align="right">-0.494</td>
+<td align="right">0.318</td>
+<td align="right">-0.192</td>
+</tr>
+<tr class="even">
+<td align="left">Phuman</td>
+<td align="right">-0.308</td>
+<td align="right">0.418</td>
+<td align="right">0.799</td>
+<td align="right">0.016</td>
+</tr>
+<tr class="odd">
+<td align="left">Secchi</td>
+<td align="right">0.567</td>
+<td align="right">-0.602</td>
+<td align="right">0.175</td>
+<td align="right">-0.354</td>
+</tr>
+<tr class="even">
+<td align="left">ShedArea</td>
+<td align="right">0.514</td>
+<td align="right">0.600</td>
+<td align="right">0.244</td>
+<td align="right">0.009</td>
+</tr>
+<tr class="odd">
+<td align="left">SI</td>
+<td align="right">0.690</td>
+<td align="right">0.410</td>
+<td align="right">-0.237</td>
+<td align="right">0.033</td>
+</tr>
+</tbody>
+</table>
 <pre class="r"><code>mythm &lt;- theme_bw(base_family = &#39;serif&#39;) +
   theme(
   strip.background = element_blank(), 
@@ -712,75 +804,15 @@ p</code></pre>
 <p><img src="README_files/figure-html/Fig3.png" width="60%" style="display: block; margin: auto;" /></p>
 <pre class="r"><code># dev.off()</code></pre>
 </div>
-<div id="mrrp-all-groups" class="section level2">
-<h2>MRRP all groups</h2>
-<pre class="r"><code># MRPP to test differences among groups (by mean and/or variance of dissimilarities)
-# significant values means that groupings were moree different than would be expected by chance
-# delta statistics for each group indicates relative dissimilarity within groups
-# higher delta is more dissimilar within group
-mrpp(tomod, grouping = d$Group)</code></pre>
-<pre><code>## 
-## Call:
-## mrpp(dat = tomod, grouping = d$Group) 
-## 
-## Dissimilarity index: euclidean 
-## Weights for groups:  n 
-## 
-## Class means and counts:
-## 
-##       C_abs, B_abs C_abs, B_prs C_prs, B_abs C_prs, B_prs
-## delta 3.103        3.904         3.34        3.161       
-## n     20           64           28           131         
-## 
-## Chance corrected within-group agreement A: 0.03475 
-## Based on observed delta 3.372 and expected delta 3.494 
-## 
-## Significance of delta: 0.001 
-## Permutation: free
-## Number of permutations: 999</code></pre>
-</div>
-<div id="mrpp-multiple-comparisons" class="section level2">
-<h2>MRPP multiple comparisons</h2>
-<pre class="r"><code># pairwise comparisons of groups with MRPP
-grps &lt;- d$Group %&gt;% unique
-grps &lt;- combn(grps, 2)
-pval &lt;- rep(NA, ncol(grps))
-aval &lt;- rep(NA, ncol(grps))
-for(col in 1:ncol(grps)){
-  grp &lt;- d$Group %in% grps[, col, drop = TRUE]
-  res &lt;- mrpp(tomod[grp, ], d$Group[grp])
-  pval[col] &lt;- res$Pvalue
-  aval[col] &lt;- res$A
-}
-
-# adjust p-values using holm sequential bonferroni
-pval &lt;- p.adjust(pval, method = &#39;holm&#39;)
-
-# pval as t/f using bonferroni correction
-vecs &lt;- rep(FALSE, ncol(grps))
-vecs[pval &lt; 0.05] &lt;- TRUE
-names(vecs) &lt;- paste(grps[1, ], grps[2, ], sep = &#39;-&#39;)
-
-# group membership based on multiple comparisons
-multcompView::multcompLetters(vecs)$Letters</code></pre>
-<pre><code>## C_prs, B_prs C_abs, B_prs C_prs, B_abs C_abs, B_abs 
-##          &quot;a&quot;          &quot;b&quot;          &quot;b&quot;          &quot;b&quot;</code></pre>
-<pre class="r"><code>rbind(grps, round(aval, 4))</code></pre>
-<pre><code>##      [,1]           [,2]           [,3]           [,4]          
-## [1,] &quot;C_prs, B_prs&quot; &quot;C_prs, B_prs&quot; &quot;C_prs, B_prs&quot; &quot;C_abs, B_prs&quot;
-## [2,] &quot;C_abs, B_prs&quot; &quot;C_prs, B_abs&quot; &quot;C_abs, B_abs&quot; &quot;C_prs, B_abs&quot;
-## [3,] &quot;0.0206&quot;       &quot;0.0295&quot;       &quot;0.0216&quot;       &quot;0.0099&quot;      
-##      [,5]           [,6]          
-## [1,] &quot;C_abs, B_prs&quot; &quot;C_prs, B_abs&quot;
-## [2,] &quot;C_abs, B_abs&quot; &quot;C_abs, B_abs&quot;
-## [3,] &quot;0.0034&quot;       &quot;0.0016&quot;</code></pre>
+<div id="fig-4" class="section level2">
+<h2>Fig 4</h2>
 <pre class="r"><code>sums &lt;- d %&gt;% 
   select(Depth, Secchi, Area, SI, ShedArea, Phuman, Bluegill, Group) %&gt;% 
   gather(&#39;var&#39;, &#39;val&#39;, -Group) %&gt;% 
   mutate(
     Group = factor(Group, 
                       levels = c(&#39;C_abs, B_abs&#39;, &#39;C_abs, B_prs&#39;, &#39;C_prs, B_abs&#39;, &#39;C_prs, B_prs&#39;), 
-                      labels = c(&#39;None&#39;, &#39;Bullhead&#39;, &#39;Carp&#39;, &#39;Carp and Bullhead&#39;)
+                      labels = c(&#39;None&#39;, &#39;Bullhead&#39;, &#39;Carp&#39;, &#39;Carp and\nBullhead&#39;)
     )
   )
 vrs &lt;- sums$var %&gt;% 
@@ -795,7 +827,7 @@ for(vr in vrs){
   p &lt;- ggplot(toplo, aes(x = Group, y = val)) + 
     geom_boxplot(fill = &#39;lightgrey&#39;) + 
     theme_bw(base_family = &#39;serif&#39;) +
-    theme(strip.background = element_blank(), axis.title.x = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 40, size = 6, hjust = 1, vjust = 1))
+    theme(strip.background = element_blank(), axis.title.x = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 40, size = 8, hjust = 1, vjust = 1))
   
   if(!vr %in% &#39;Phuman&#39;)
     p &lt;- p + 
@@ -836,7 +868,125 @@ pG$widths[2:3] &lt;- maxWidth
 grid.arrange(
   arrangeGrob(pA, pB, pC, pD, pE, pF, pG, ncol = 2)
 )</code></pre>
-<p><img src="README_files/figure-html/boxplots.png" width="60%" style="display: block; margin: auto;" /></p>
+<p><img src="README_files/figure-html/Fig4.png" width="60%" style="display: block; margin: auto;" /></p>
+</div>
+<div id="fig-s1" class="section level2">
+<h2>Fig S1</h2>
+<pre class="r"><code>######
+# diagnostic plots
+data(map_dat)
+
+# format data
+toplo &lt;- select(fishdat, 
+  S_rich, common.carp_GN, black.bullhead_TN, bluegill_TN, secchim, sdi, phuman, aream2, shedaream2, ecoreg, depthm
+  ) %&gt;% 
+  mutate(
+    common.carp_GN = 1 + common.carp_GN, 
+    black.bullhead_TN = 1 + black.bullhead_TN, 
+    bluegill_TN = 1 + bluegill_TN,
+    ecoreg = factor(ecoreg, levels = c(&#39;eastern temperate forests&#39;, &#39;great plains&#39;), labels = c(&#39;ETF&#39;, &#39;GP&#39;))
+  ) %&gt;% 
+  rename(
+    SpeciesRichness = S_rich, 
+    Carp = common.carp_GN,
+    Bullhead = black.bullhead_TN, 
+    Bluegill = bluegill_TN,
+    Secchi = secchim, 
+    SI = sdi, 
+    Phuman = phuman, 
+    Area = aream2,
+    ShedArea = shedaream2,
+    Depth = depthm, 
+    Ecoregion = ecoreg
+  ) %&gt;% 
+  gather(&#39;var&#39;, &#39;val&#39;, -SpeciesRichness, -Ecoregion)
+  
+# create plot
+p &lt;- ggplot(toplo, aes(x = val, y = SpeciesRichness, fill = Ecoregion, colour = Ecoregion)) + 
+  geom_point(pch = 21, alpha = 0.8) + 
+  scale_x_log10(&#39;Value, log10&#39;,
+                breaks = scales::trans_breaks(&quot;log10&quot;, function(x) 10^x),
+                labels = scales::trans_format(&quot;log10&quot;, scales::math_format(10^.x))
+                ) +
+  scale_y_continuous(&#39;Plant richness&#39;, expand = c(0, 0)) + 
+  stat_smooth(method =&#39;lm&#39;, colour = &#39;black&#39;, se = TRUE) + 
+  facet_wrap(Ecoregion ~ var, ncol = 9, scales = &#39;free_x&#39;) + 
+  theme_bw() + 
+  theme(
+    legend.position = &#39;none&#39;,
+    strip.background = element_rect(fill = &quot;white&quot;), 
+    panel.grid.minor.x = element_blank(),
+    axis.text.x = element_text(size = 6)
+    )
+
+# save
+# tiff(&#39;fig3.tif&#39;, height = 5, width = 12, units = &#39;in&#39;, compression = &#39;lzw&#39;, res = 300, family = &#39;serif&#39;)
+p</code></pre>
+<p><img src="README_files/figure-html/FigS1.png" width="60%" style="display: block; margin: auto;" /></p>
+<pre class="r"><code># dev.off()</code></pre>
+</div>
+<div id="mrpp-all-groups" class="section level2">
+<h2>MRPP all groups</h2>
+<pre class="r"><code># MRPP to test differences among groups (by mean and/or variance of dissimilarities)
+# significant values means that groupings were moree different than would be expected by chance
+# delta statistics for each group indicates relative dissimilarity within groups
+# higher delta is more dissimilar within group
+mrpp(tomod, grouping = d$Group)</code></pre>
+<pre><code>## 
+## Call:
+## mrpp(dat = tomod, grouping = d$Group) 
+## 
+## Dissimilarity index: euclidean 
+## Weights for groups:  n 
+## 
+## Class means and counts:
+## 
+##       C_abs, B_abs C_abs, B_prs C_prs, B_abs C_prs, B_prs
+## delta 3.103        3.904         3.34        3.161       
+## n     20           64           28           131         
+## 
+## Chance corrected within-group agreement A: 0.03475 
+## Based on observed delta 3.372 and expected delta 3.494 
+## 
+## Significance of delta: 0.001 
+## Permutation: free
+## Number of permutations: 999</code></pre>
+</div>
+<div id="mrpp-multiple-comparisons" class="section level2">
+<h2>MRPP multiple comparisons</h2>
+<pre class="r"><code># pairwise comparisons of groups with MRPP
+grps &lt;- d$Group %&gt;% unique
+grps &lt;- combn(grps, 2)
+pval &lt;- rep(NA, ncol(grps))
+aval &lt;- rep(NA, ncol(grps))
+for(col in 1:ncol(grps)){
+  grp &lt;- d$Group %in% grps[, col, drop = TRUE]
+  res &lt;- mrpp(tomod[grp, ], d$Group[grp])
+  pval[col] &lt;- res$Pvalue
+  aval[col] &lt;- res$A
+}
+
+# adjust p-values using holm sequential bonferroni
+# pval &lt;- p.adjust(pval, method = &#39;holm&#39;)
+
+# pval as t/f
+vecs &lt;- rep(FALSE, ncol(grps))
+vecs[pval &lt; 0.05] &lt;- TRUE
+names(vecs) &lt;- paste(grps[1, ], grps[2, ], sep = &#39;-&#39;)
+
+# group membership based on multiple comparisons
+multcompView::multcompLetters(vecs)$Letters</code></pre>
+<pre><code>## C_prs, B_prs C_abs, B_prs C_prs, B_abs C_abs, B_abs 
+##          &quot;a&quot;          &quot;b&quot;          &quot;c&quot;         &quot;bc&quot;</code></pre>
+<pre class="r"><code>rbind(grps, round(aval, 4))</code></pre>
+<pre><code>##      [,1]           [,2]           [,3]           [,4]          
+## [1,] &quot;C_prs, B_prs&quot; &quot;C_prs, B_prs&quot; &quot;C_prs, B_prs&quot; &quot;C_abs, B_prs&quot;
+## [2,] &quot;C_abs, B_prs&quot; &quot;C_prs, B_abs&quot; &quot;C_abs, B_abs&quot; &quot;C_prs, B_abs&quot;
+## [3,] &quot;0.0206&quot;       &quot;0.0295&quot;       &quot;0.0216&quot;       &quot;0.0099&quot;      
+##      [,5]           [,6]          
+## [1,] &quot;C_abs, B_prs&quot; &quot;C_prs, B_abs&quot;
+## [2,] &quot;C_abs, B_abs&quot; &quot;C_abs, B_abs&quot;
+## [3,] &quot;0.0034&quot;       &quot;0.0016&quot;</code></pre>
 </div>
 </div>
 

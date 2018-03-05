@@ -51,29 +51,19 @@ All data created in `R\dat_proc.R`.  Source data in the ignore folder were creat
 
 ```{r sumtab, results = 'asis'}
 # diagnostic plots
-data(map_dat)
 
-fishdat <- 
+rev_fishdat <- read.csv('raw/d2.csv')
 
 # format data
-totab <- select(fishdat, 
-                S_rich, common.carp_GN, black.bullhead_TN, bluegill_TN, secchim, sdi, phuman, aream2, shedaream2, ecoreg, depthm
-) %>% 
-  mutate(
-    ecoreg = factor(ecoreg, levels = c('eastern temperate forests', 'great plains'), labels = c('ETF', 'GP'))
+totab <- select(rev_fishdat, 
+  SpeciesRichness, Carp, Bullhead, Bluegill, Secchi, SDI, Human, Area, ShedArea, Ecoregion, Depth
   ) %>% 
   rename(
-    SpeciesRichness = S_rich, 
-    Carp = common.carp_GN,
-    Bullhead = black.bullhead_TN, 
-    Bluegill = bluegill_TN,
-    Secchi = secchim, 
-    SDI = sdi, 
-    Human = phuman, 
-    Area = aream2,
-    ShedArea = shedaream2,
-    Depth = depthm, 
-    Ecoregion = ecoreg
+    SI = SDI,
+    Phuman = Human
+  ) %>% 
+  mutate(
+    Ecoregion = factor(Ecoregion, levels = c('Forest', 'Plain'), labels = c('ETF', 'GP'))
   ) %>% 
   mutate(
     Area = Area * 1e-6,
@@ -81,7 +71,7 @@ totab <- select(fishdat,
   ) %>% 
   gather('Variable', 'val', -Ecoregion) %>% 
   mutate(Variable = factor(Variable, 
-                      levels = c('SpeciesRichness', 'Carp', 'Bullhead', 'Bluegill', 'Area', 'Depth', 'Human', 'SDI', 'Secchi', 'ShedArea'))
+                      levels = c('SpeciesRichness', 'Carp', 'Bullhead', 'Bluegill', 'Area', 'Depth', 'Phuman', 'SI', 'Secchi', 'ShedArea'))
          ) %>% 
   group_by(Ecoregion, Variable) %>% 
   summarise(
@@ -100,12 +90,12 @@ totab <- select(fishdat,
   ) %>% 
   unite('Ave. (Med.)', Average, Median, sep = ' ')
 
-write.csv(totab, 'ignore/summtab.csv', quote = F, row.names = F)
+write.csv(totab, 'raw/table1.csv', quote = F, row.names = F)
 kable(totab)
 ```
 
 ```{r}
-merged_2<-read.csv("ignore/merged_2.csv")
+merged_2<-read.csv("raw/merged_2.csv")
 d <- merged_2[,c("common.carp_GN", "black.bullhead_TN", "bluegill_TN", 
                  "secchim", "sdi", "phuman", "aream2", "shedaream2", "depthm")]
 names(d) <- c("Carp", "Bullhead", "Bluegill", "Secchi", "SDI", 
@@ -244,7 +234,7 @@ print(pinset, vp = v3)
 # diagnostic plots
 data(map_dat)
 
-rev_fishdat <- read.csv("ignore/d2.csv")
+rev_fishdat <- read.csv("raw/d2.csv")
 
 # format data
 toplo <- select(rev_fishdat, 
@@ -289,9 +279,9 @@ p3
 ```
 
 ## Fig 3
-```{r Fig3, fig.height = 6, fig.width = 6}
+```{r}
 
-rev_fishdat <- read.csv("ignore/d2.csv")
+rev_fishdat <- read.csv("raw/d2.csv")
 
 # format data
 d<- select(rev_fishdat, 
@@ -318,8 +308,26 @@ tomod <- d %>%
   select(Bluegill, Depth, Secchi, Area, SI, ShedArea, Phuman) %>% 
   decostand(method = 'standardize')
 ppp <- PCA(tomod, scale.unit = F, graph = F)
-dimdesc(ppp, axes = c(1:3))
+```
+Eigen values:
+```{r}
+ppp$eig %>% round(3) %>% kable
+```
+Loadings:
+```{r}
+out <- ppp$var$coord %>% 
+  round(3) %>% 
+  as.data.frame %>% 
+  select(-Dim.5) %>% 
+  rename_(.dots = setNames(names(.), gsub('^Dim\\.', 'Comp ', names(.)))) %>% 
+  rownames_to_column('var') %>% 
+  arrange(var)
 
+write.csv(out, 'raw/table4.csv', quote = F, row.names = F)  
+kable(out)
+```
+
+```{r Fig3, fig.height = 6, fig.width = 6}
 mythm <- theme_bw(base_family = 'serif') +
   theme(
   strip.background = element_blank(), 
@@ -382,51 +390,15 @@ p
 # dev.off()
 ```
 
-## MRRP all groups
-```{r}
-# MRPP to test differences among groups (by mean and/or variance of dissimilarities)
-# significant values means that groupings were moree different than would be expected by chance
-# delta statistics for each group indicates relative dissimilarity within groups
-# higher delta is more dissimilar within group
-mrpp(tomod, grouping = d$Group)
-```
-
-## MRPP multiple comparisons
-```{r}
-# pairwise comparisons of groups with MRPP
-grps <- d$Group %>% unique
-grps <- combn(grps, 2)
-pval <- rep(NA, ncol(grps))
-aval <- rep(NA, ncol(grps))
-for(col in 1:ncol(grps)){
-  grp <- d$Group %in% grps[, col, drop = TRUE]
-  res <- mrpp(tomod[grp, ], d$Group[grp])
-  pval[col] <- res$Pvalue
-  aval[col] <- res$A
-}
-
-# adjust p-values using holm sequential bonferroni
-pval <- p.adjust(pval, method = 'holm')
-
-# pval as t/f using bonferroni correction
-vecs <- rep(FALSE, ncol(grps))
-vecs[pval < 0.05] <- TRUE
-names(vecs) <- paste(grps[1, ], grps[2, ], sep = '-')
-
-# group membership based on multiple comparisons
-multcompView::multcompLetters(vecs)$Letters
-
-rbind(grps, round(aval, 4))
-```
-
-```{r boxplots, fig.height = 8, fig.width = 8}
+## Fig 4
+```{r Fig4, fig.height = 7, fig.width = 7}
 sums <- d %>% 
   select(Depth, Secchi, Area, SI, ShedArea, Phuman, Bluegill, Group) %>% 
   gather('var', 'val', -Group) %>% 
   mutate(
     Group = factor(Group, 
                       levels = c('C_abs, B_abs', 'C_abs, B_prs', 'C_prs, B_abs', 'C_prs, B_prs'), 
-                      labels = c('None', 'Bullhead', 'Carp', 'Carp and Bullhead')
+                      labels = c('None', 'Bullhead', 'Carp', 'Carp and\nBullhead')
     )
   )
 vrs <- sums$var %>% 
@@ -441,7 +413,7 @@ for(vr in vrs){
   p <- ggplot(toplo, aes(x = Group, y = val)) + 
     geom_boxplot(fill = 'lightgrey') + 
     theme_bw(base_family = 'serif') +
-    theme(strip.background = element_blank(), axis.title.x = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 40, size = 6, hjust = 1, vjust = 1))
+    theme(strip.background = element_blank(), axis.title.x = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 40, size = 8, hjust = 1, vjust = 1))
   
   if(!vr %in% 'Phuman')
     p <- p + 
@@ -484,3 +456,95 @@ grid.arrange(
 )
 ```
 
+## Fig S1
+
+```{r FigS1, fig.height = 5, fig.width = 12}
+######
+# diagnostic plots
+data(map_dat)
+
+# format data
+toplo <- select(fishdat, 
+  S_rich, common.carp_GN, black.bullhead_TN, bluegill_TN, secchim, sdi, phuman, aream2, shedaream2, ecoreg, depthm
+  ) %>% 
+  mutate(
+    common.carp_GN = 1 + common.carp_GN, 
+    black.bullhead_TN = 1 + black.bullhead_TN, 
+    bluegill_TN = 1 + bluegill_TN,
+    ecoreg = factor(ecoreg, levels = c('eastern temperate forests', 'great plains'), labels = c('ETF', 'GP'))
+  ) %>% 
+  rename(
+    SpeciesRichness = S_rich, 
+    Carp = common.carp_GN,
+    Bullhead = black.bullhead_TN, 
+    Bluegill = bluegill_TN,
+    Secchi = secchim, 
+    SI = sdi, 
+    Phuman = phuman, 
+    Area = aream2,
+    ShedArea = shedaream2,
+    Depth = depthm, 
+    Ecoregion = ecoreg
+  ) %>% 
+  gather('var', 'val', -SpeciesRichness, -Ecoregion)
+  
+# create plot
+p <- ggplot(toplo, aes(x = val, y = SpeciesRichness, fill = Ecoregion, colour = Ecoregion)) + 
+  geom_point(pch = 21, alpha = 0.8) + 
+  scale_x_log10('Value, log10',
+                breaks = scales::trans_breaks("log10", function(x) 10^x),
+                labels = scales::trans_format("log10", scales::math_format(10^.x))
+                ) +
+  scale_y_continuous('Plant richness', expand = c(0, 0)) + 
+  stat_smooth(method ='lm', colour = 'black', se = TRUE) + 
+  facet_wrap(Ecoregion ~ var, ncol = 9, scales = 'free_x') + 
+  theme_bw() + 
+  theme(
+    legend.position = 'none',
+    strip.background = element_rect(fill = "white"), 
+    panel.grid.minor.x = element_blank(),
+    axis.text.x = element_text(size = 6)
+    )
+
+# save
+# tiff('fig3.tif', height = 5, width = 12, units = 'in', compression = 'lzw', res = 300, family = 'serif')
+p
+# dev.off()
+```
+
+## MRPP all groups
+```{r}
+# MRPP to test differences among groups (by mean and/or variance of dissimilarities)
+# significant values means that groupings were moree different than would be expected by chance
+# delta statistics for each group indicates relative dissimilarity within groups
+# higher delta is more dissimilar within group
+mrpp(tomod, grouping = d$Group)
+```
+
+## MRPP multiple comparisons
+```{r}
+# pairwise comparisons of groups with MRPP
+grps <- d$Group %>% unique
+grps <- combn(grps, 2)
+pval <- rep(NA, ncol(grps))
+aval <- rep(NA, ncol(grps))
+for(col in 1:ncol(grps)){
+  grp <- d$Group %in% grps[, col, drop = TRUE]
+  res <- mrpp(tomod[grp, ], d$Group[grp])
+  pval[col] <- res$Pvalue
+  aval[col] <- res$A
+}
+
+# adjust p-values using holm sequential bonferroni
+# pval <- p.adjust(pval, method = 'holm')
+
+# pval as t/f
+vecs <- rep(FALSE, ncol(grps))
+vecs[pval < 0.05] <- TRUE
+names(vecs) <- paste(grps[1, ], grps[2, ], sep = '-')
+
+# group membership based on multiple comparisons
+multcompView::multcompLetters(vecs)$Letters
+
+rbind(grps, round(aval, 4))
+```

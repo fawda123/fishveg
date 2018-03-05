@@ -53,29 +53,19 @@ All data created in `R\dat_proc.R`.  Source data in the ignore folder were creat
 
 ```r
 # diagnostic plots
-data(map_dat)
 
-fishdat <- 
+rev_fishdat <- read.csv('raw/d2.csv')
 
 # format data
-totab <- select(fishdat, 
-                S_rich, common.carp_GN, black.bullhead_TN, bluegill_TN, secchim, sdi, phuman, aream2, shedaream2, ecoreg, depthm
-) %>% 
-  mutate(
-    ecoreg = factor(ecoreg, levels = c('eastern temperate forests', 'great plains'), labels = c('ETF', 'GP'))
+totab <- select(rev_fishdat, 
+  SpeciesRichness, Carp, Bullhead, Bluegill, Secchi, SDI, Human, Area, ShedArea, Ecoregion, Depth
   ) %>% 
   rename(
-    SpeciesRichness = S_rich, 
-    Carp = common.carp_GN,
-    Bullhead = black.bullhead_TN, 
-    Bluegill = bluegill_TN,
-    Secchi = secchim, 
-    SDI = sdi, 
-    Human = phuman, 
-    Area = aream2,
-    ShedArea = shedaream2,
-    Depth = depthm, 
-    Ecoregion = ecoreg
+    SI = SDI,
+    Phuman = Human
+  ) %>% 
+  mutate(
+    Ecoregion = factor(Ecoregion, levels = c('Forest', 'Plain'), labels = c('ETF', 'GP'))
   ) %>% 
   mutate(
     Area = Area * 1e-6,
@@ -83,7 +73,7 @@ totab <- select(fishdat,
   ) %>% 
   gather('Variable', 'val', -Ecoregion) %>% 
   mutate(Variable = factor(Variable, 
-                      levels = c('SpeciesRichness', 'Carp', 'Bullhead', 'Bluegill', 'Area', 'Depth', 'Human', 'SDI', 'Secchi', 'ShedArea'))
+                      levels = c('SpeciesRichness', 'Carp', 'Bullhead', 'Bluegill', 'Area', 'Depth', 'Phuman', 'SI', 'Secchi', 'ShedArea'))
          ) %>% 
   group_by(Ecoregion, Variable) %>% 
   summarise(
@@ -102,38 +92,38 @@ totab <- select(fishdat,
   ) %>% 
   unite('Ave. (Med.)', Average, Median, sep = ' ')
 
-write.csv(totab, 'ignore/summtab.csv', quote = F, row.names = F)
+write.csv(totab, 'raw/table1.csv', quote = F, row.names = F)
 kable(totab)
 ```
 
 
 
-Ecoregion   Variable          Ave. (Med.)    Var.      Min./Max.    
-----------  ----------------  -------------  --------  -------------
-ETF         SpeciesRichness   10.3 (10)      27.6      0 / 24       
-            Carp              2.1 (0.4)      23        0 / 45.1     
-            Bullhead          1.4 (0.1)      42.6      0 / 87.4     
-            Bluegill          1.9 (1.1)      6.7       0 / 18       
-            Area              2.5 (1.4)      12.3      0.1 / 22.5   
-            Depth             11.2 (9.7)     50.5      1.8 / 34.2   
-            Human             0.6 (0.6)      0         0.1 / 1      
-            SDI               1.7 (1.5)      0.4       1.1 / 4.4    
-            Secchi            1.6 (1.4)      0.7       0.3 / 5.4    
-            ShedArea          112.5 (28.9)   77601.3   0.2 / 2808.1 
-GP          SpeciesRichness   3.6 (3)        13.6      0 / 16       
-            Carp              6.1 (3.7)      47.8      0 / 36       
-            Bullhead          5.8 (1.9)      95        0 / 48.4     
-            Bluegill          0.5 (0.1)      1.8       0 / 10.8     
-            Area              2.3 (1.5)      6.7       0.2 / 10.9   
-            Depth             4.7 (3.4)      13.7      1.5 / 25.3   
-            Human             0.7 (0.8)      0         0.4 / 0.9    
-            SDI               1.7 (1.5)      0.3       1 / 3.5      
-            Secchi            0.8 (0.6)      0.4       0.2 / 3.5    
-            ShedArea          34.1 (10.8)    2134.9    1.2 / 249.4  
+Ecoregion   Variable          Ave. (Med.)   Var.    Min./Max.  
+----------  ----------------  ------------  ------  -----------
+ETF         SpeciesRichness   10.5 (10)     25.2    0 / 23     
+            Carp              2.2 (0.4)     24.8    0 / 45.1   
+            Bullhead          1.2 (0.1)     16.1    0 / 39.2   
+            Bluegill          1.7 (1.2)     2       0 / 5.7    
+            Area              1.8 (1.2)     3.7     0.1 / 9.4  
+            Depth             11.3 (10.7)   44.4    1.8 / 32.1 
+            Phuman            0.6 (0.6)     0       0.3 / 1    
+            SI                1.7 (1.5)     0.3     1.1 / 3.8  
+            Secchi            1.5 (1.3)     0.7     0.3 / 5.4  
+            ShedArea          25 (19.1)     535.9   0.8 / 98.6 
+GP          SpeciesRichness   3.3 (2)       13.6    0 / 16     
+            Carp              6.5 (4.4)     51.5    0 / 36     
+            Bullhead          5.5 (2)       78.7    0 / 39.6   
+            Bluegill          0.3 (0.1)     0.5     0 / 5.1    
+            Area              1.8 (1.5)     2.1     0.2 / 7.9  
+            Depth             4.6 (3)       12.9    1.5 / 25.3 
+            Phuman            0.7 (0.8)     0       0.4 / 0.9  
+            SI                1.6 (1.4)     0.3     1 / 3.5    
+            Secchi            0.8 (0.6)     0.4     0.2 / 3.5  
+            ShedArea          21.4 (9.1)    631.9   1.4 / 82.2 
 
 
 ```r
-merged_2<-read.csv("ignore/merged_2.csv")
+merged_2<-read.csv("raw/merged_2.csv")
 d <- merged_2[,c("common.carp_GN", "black.bullhead_TN", "bluegill_TN", 
                  "secchim", "sdi", "phuman", "aream2", "shedaream2", "depthm")]
 names(d) <- c("Carp", "Bullhead", "Bluegill", "Secchi", "SDI", 
@@ -299,7 +289,7 @@ print(pinset, vp = v3)
 # diagnostic plots
 data(map_dat)
 
-rev_fishdat <- read.csv("ignore/d2.csv")
+rev_fishdat <- read.csv("raw/d2.csv")
 
 # format data
 toplo <- select(rev_fishdat, 
@@ -351,7 +341,7 @@ p3
 ## Fig 3
 
 ```r
-rev_fishdat <- read.csv("ignore/d2.csv")
+rev_fishdat <- read.csv("raw/d2.csv")
 
 # format data
 d<- select(rev_fishdat, 
@@ -378,44 +368,49 @@ tomod <- d %>%
   select(Bluegill, Depth, Secchi, Area, SI, ShedArea, Phuman) %>% 
   decostand(method = 'standardize')
 ppp <- PCA(tomod, scale.unit = F, graph = F)
-dimdesc(ppp, axes = c(1:3))
+```
+Eigen values:
+
+```r
+ppp$eig %>% round(3) %>% kable
 ```
 
+          eigenvalue   percentage of variance   cumulative percentage of variance
+-------  -----------  -----------------------  ----------------------------------
+comp 1         2.202                   31.593                              31.593
+comp 2         1.763                   25.285                              56.878
+comp 3         0.921                   13.206                              70.084
+comp 4         0.828                   11.881                              81.965
+comp 5         0.541                    7.761                              89.726
+comp 6         0.413                    5.930                              95.656
+comp 7         0.303                    4.344                             100.000
+Loadings:
+
+```r
+out <- ppp$var$coord %>% 
+  round(3) %>% 
+  as.data.frame %>% 
+  select(-Dim.5) %>% 
+  rename_(.dots = setNames(names(.), gsub('^Dim\\.', 'Comp ', names(.)))) %>% 
+  rownames_to_column('var') %>% 
+  arrange(var)
+
+write.csv(out, 'raw/table4.csv', quote = F, row.names = F)  
+kable(out)
 ```
-## $Dim.1
-## $Dim.1$quanti
-##          correlation      p.value
-## Area       0.7003128 3.807019e-37
-## SI         0.6913952 7.004454e-36
-## Depth      0.6681614 8.605820e-33
-## Secchi     0.5682525 3.508253e-22
-## ShedArea   0.5148838 7.483030e-18
-## Bluegill   0.3366858 7.480955e-08
-## Phuman    -0.3085629 9.321755e-07
-## 
-## 
-## $Dim.2
-## $Dim.2$quanti
-##          correlation      p.value
-## ShedArea   0.6014935 2.666295e-25
-## Area       0.5103664 1.609032e-17
-## Phuman     0.4193134 9.127571e-12
-## SI         0.4108897 2.576117e-11
-## Bluegill  -0.4404832 5.903931e-13
-## Depth     -0.4946689 2.110547e-16
-## Secchi    -0.6035959 1.645328e-25
-## 
-## 
-## $Dim.3
-## $Dim.3$quanti
-##          correlation      p.value
-## Phuman     0.8010119 1.271334e-55
-## Depth      0.3189660 3.777135e-07
-## ShedArea   0.2441587 1.206597e-04
-## Secchi     0.1748791 6.273497e-03
-## Bluegill   0.1491421 2.002227e-02
-## SI        -0.2379305 1.812935e-04
-```
+
+
+
+var         Comp 1   Comp 2   Comp 3   Comp 4
+---------  -------  -------  -------  -------
+Area         0.699    0.509   -0.109    0.047
+Bluegill     0.336   -0.440    0.149    0.814
+Depth        0.667   -0.494    0.318   -0.192
+Phuman      -0.308    0.418    0.799    0.016
+Secchi       0.567   -0.602    0.175   -0.354
+ShedArea     0.514    0.600    0.244    0.009
+SI           0.690    0.410   -0.237    0.033
+
 
 ```r
 mythm <- theme_bw(base_family = 'serif') +
@@ -485,7 +480,138 @@ p
 # dev.off()
 ```
 
-## MRRP all groups
+## Fig 4
+
+```r
+sums <- d %>% 
+  select(Depth, Secchi, Area, SI, ShedArea, Phuman, Bluegill, Group) %>% 
+  gather('var', 'val', -Group) %>% 
+  mutate(
+    Group = factor(Group, 
+                      levels = c('C_abs, B_abs', 'C_abs, B_prs', 'C_prs, B_abs', 'C_prs, B_prs'), 
+                      labels = c('None', 'Bullhead', 'Carp', 'Carp and\nBullhead')
+    )
+  )
+vrs <- sums$var %>% 
+  unique %>% 
+  sort
+
+for(vr in vrs){
+
+  toplo <- sums %>% 
+    filter(var %in% vr)
+  
+  p <- ggplot(toplo, aes(x = Group, y = val)) + 
+    geom_boxplot(fill = 'lightgrey') + 
+    theme_bw(base_family = 'serif') +
+    theme(strip.background = element_blank(), axis.title.x = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 40, size = 8, hjust = 1, vjust = 1))
+  
+  if(!vr %in% 'Phuman')
+    p <- p + 
+      scale_y_log10(vr,
+                  breaks = scales::trans_breaks("log10", function(x) 10^x),
+                  labels = scales::trans_format("log10", scales::math_format(10^.x))
+                  )
+    
+  else
+    p <- p + scale_y_continuous(vr)
+  
+  ind <- which(vrs == vr)
+  assign(paste0('p', ind), p)
+
+
+}
+
+# fix widths
+# align widths of plots in first column, first two
+pA <- ggplot_gtable(ggplot_build(p1))
+pB <- ggplot_gtable(ggplot_build(p2))
+pC <- ggplot_gtable(ggplot_build(p3))
+pD <- ggplot_gtable(ggplot_build(p4))
+pE <- ggplot_gtable(ggplot_build(p5))
+pF <- ggplot_gtable(ggplot_build(p6))
+pG <- ggplot_gtable(ggplot_build(p7))
+
+maxWidth = grid::unit.pmax(pA$widths[2:3], pB$widths[2:3], pC$widths[2:3], pD$widths[2:3], pE$widths[2:3], pF$widths[2:3], pG$widths[2:3])
+
+pA$widths[2:3] <- maxWidth
+pB$widths[2:3] <- maxWidth
+pC$widths[2:3] <- maxWidth
+pD$widths[2:3] <- maxWidth
+pE$widths[2:3] <- maxWidth
+pF$widths[2:3] <- maxWidth
+pG$widths[2:3] <- maxWidth
+
+grid.arrange(
+  arrangeGrob(pA, pB, pC, pD, pE, pF, pG, ncol = 2)
+)
+```
+
+<img src="README_files/figure-html/Fig4.png" width="60%" style="display: block; margin: auto;" />
+
+## Fig S1
+
+
+```r
+######
+# diagnostic plots
+data(map_dat)
+
+# format data
+toplo <- select(fishdat, 
+  S_rich, common.carp_GN, black.bullhead_TN, bluegill_TN, secchim, sdi, phuman, aream2, shedaream2, ecoreg, depthm
+  ) %>% 
+  mutate(
+    common.carp_GN = 1 + common.carp_GN, 
+    black.bullhead_TN = 1 + black.bullhead_TN, 
+    bluegill_TN = 1 + bluegill_TN,
+    ecoreg = factor(ecoreg, levels = c('eastern temperate forests', 'great plains'), labels = c('ETF', 'GP'))
+  ) %>% 
+  rename(
+    SpeciesRichness = S_rich, 
+    Carp = common.carp_GN,
+    Bullhead = black.bullhead_TN, 
+    Bluegill = bluegill_TN,
+    Secchi = secchim, 
+    SI = sdi, 
+    Phuman = phuman, 
+    Area = aream2,
+    ShedArea = shedaream2,
+    Depth = depthm, 
+    Ecoregion = ecoreg
+  ) %>% 
+  gather('var', 'val', -SpeciesRichness, -Ecoregion)
+  
+# create plot
+p <- ggplot(toplo, aes(x = val, y = SpeciesRichness, fill = Ecoregion, colour = Ecoregion)) + 
+  geom_point(pch = 21, alpha = 0.8) + 
+  scale_x_log10('Value, log10',
+                breaks = scales::trans_breaks("log10", function(x) 10^x),
+                labels = scales::trans_format("log10", scales::math_format(10^.x))
+                ) +
+  scale_y_continuous('Plant richness', expand = c(0, 0)) + 
+  stat_smooth(method ='lm', colour = 'black', se = TRUE) + 
+  facet_wrap(Ecoregion ~ var, ncol = 9, scales = 'free_x') + 
+  theme_bw() + 
+  theme(
+    legend.position = 'none',
+    strip.background = element_rect(fill = "white"), 
+    panel.grid.minor.x = element_blank(),
+    axis.text.x = element_text(size = 6)
+    )
+
+# save
+# tiff('fig3.tif', height = 5, width = 12, units = 'in', compression = 'lzw', res = 300, family = 'serif')
+p
+```
+
+<img src="README_files/figure-html/FigS1.png" width="60%" style="display: block; margin: auto;" />
+
+```r
+# dev.off()
+```
+
+## MRPP all groups
 
 ```r
 # MRPP to test differences among groups (by mean and/or variance of dissimilarities)
@@ -533,9 +659,9 @@ for(col in 1:ncol(grps)){
 }
 
 # adjust p-values using holm sequential bonferroni
-pval <- p.adjust(pval, method = 'holm')
+# pval <- p.adjust(pval, method = 'holm')
 
-# pval as t/f using bonferroni correction
+# pval as t/f
 vecs <- rep(FALSE, ncol(grps))
 vecs[pval < 0.05] <- TRUE
 names(vecs) <- paste(grps[1, ], grps[2, ], sep = '-')
@@ -546,7 +672,7 @@ multcompView::multcompLetters(vecs)$Letters
 
 ```
 ## C_prs, B_prs C_abs, B_prs C_prs, B_abs C_abs, B_abs 
-##          "a"          "b"          "b"          "b"
+##          "a"          "b"          "c"         "bc"
 ```
 
 ```r
@@ -563,72 +689,3 @@ rbind(grps, round(aval, 4))
 ## [2,] "C_abs, B_abs" "C_abs, B_abs"
 ## [3,] "0.0034"       "0.0016"
 ```
-
-
-```r
-sums <- d %>% 
-  select(Depth, Secchi, Area, SI, ShedArea, Phuman, Bluegill, Group) %>% 
-  gather('var', 'val', -Group) %>% 
-  mutate(
-    Group = factor(Group, 
-                      levels = c('C_abs, B_abs', 'C_abs, B_prs', 'C_prs, B_abs', 'C_prs, B_prs'), 
-                      labels = c('None', 'Bullhead', 'Carp', 'Carp and Bullhead')
-    )
-  )
-vrs <- sums$var %>% 
-  unique %>% 
-  sort
-
-for(vr in vrs){
-
-  toplo <- sums %>% 
-    filter(var %in% vr)
-  
-  p <- ggplot(toplo, aes(x = Group, y = val)) + 
-    geom_boxplot(fill = 'lightgrey') + 
-    theme_bw(base_family = 'serif') +
-    theme(strip.background = element_blank(), axis.title.x = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 40, size = 6, hjust = 1, vjust = 1))
-  
-  if(!vr %in% 'Phuman')
-    p <- p + 
-      scale_y_log10(vr,
-                  breaks = scales::trans_breaks("log10", function(x) 10^x),
-                  labels = scales::trans_format("log10", scales::math_format(10^.x))
-                  )
-    
-  else
-    p <- p + scale_y_continuous(vr)
-  
-  ind <- which(vrs == vr)
-  assign(paste0('p', ind), p)
-
-
-}
-
-# fix widths
-# align widths of plots in first column, first two
-pA <- ggplot_gtable(ggplot_build(p1))
-pB <- ggplot_gtable(ggplot_build(p2))
-pC <- ggplot_gtable(ggplot_build(p3))
-pD <- ggplot_gtable(ggplot_build(p4))
-pE <- ggplot_gtable(ggplot_build(p5))
-pF <- ggplot_gtable(ggplot_build(p6))
-pG <- ggplot_gtable(ggplot_build(p7))
-
-maxWidth = grid::unit.pmax(pA$widths[2:3], pB$widths[2:3], pC$widths[2:3], pD$widths[2:3], pE$widths[2:3], pF$widths[2:3], pG$widths[2:3])
-
-pA$widths[2:3] <- maxWidth
-pB$widths[2:3] <- maxWidth
-pC$widths[2:3] <- maxWidth
-pD$widths[2:3] <- maxWidth
-pE$widths[2:3] <- maxWidth
-pF$widths[2:3] <- maxWidth
-pG$widths[2:3] <- maxWidth
-
-grid.arrange(
-  arrangeGrob(pA, pB, pC, pD, pE, pF, pG, ncol = 2)
-)
-```
-
-<img src="README_files/figure-html/boxplots.png" width="60%" style="display: block; margin: auto;" />
-
