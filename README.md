@@ -1,11 +1,3 @@
----
-output:
-  html_document:
-    keep_md: yes
-    toc: yes
-    self_contained: no
-    code_folding: hide
----
 
 # README
 
@@ -317,7 +309,7 @@ p3 <- ggplot(toplo, aes(x = val, y = SpeciesRichness, fill = Ecoregion, colour =
   # annotation_logticks(sides = "b") +
   scale_y_continuous('Plant richness', expand = c(0, 0)) + 
   stat_smooth(method ='lm', colour = 'black', se = TRUE) + 
-  facet_wrap( ~ var, ncol = 9, scales = 'free_x') +
+  facet_wrap( ~ var, ncol = 3, scales = 'free_x') +
   theme_bw() + 
   theme(
     legend.position = 'top',

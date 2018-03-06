@@ -21,8 +21,8 @@
 <script src="README_files/bootstrap-3.3.5/shim/respond.min.js"></script>
 <script src="README_files/navigation-1.1/tabsets.js"></script>
 <script src="README_files/navigation-1.1/codefolding.js"></script>
-<link href="README_files/highlightjs-9.12.0/default.css" rel="stylesheet" />
-<script src="README_files/highlightjs-9.12.0/highlight.js"></script>
+<link href="README_files/highlightjs-1.1/default.css" rel="stylesheet" />
+<script src="README_files/highlightjs-1.1/highlight.js"></script>
 
 <style type="text/css">code{white-space: pre;}</style>
 <style type="text/css">
@@ -31,12 +31,10 @@
   }
 </style>
 <script type="text/javascript">
-if (window.hljs) {
-  hljs.configure({languages: []});
-  hljs.initHighlightingOnLoad();
-  if (document.readyState && document.readyState === "complete") {
-    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
-  }
+if (window.hljs && document.readyState && document.readyState === "complete") {
+   window.setTimeout(function() {
+      hljs.initHighlighting();
+   }, 0);
 }
 </script>
 
@@ -563,7 +561,7 @@ p3 &lt;- ggplot(toplo, aes(x = val, y = SpeciesRichness, fill = Ecoregion, colou
   # annotation_logticks(sides = &quot;b&quot;) +
   scale_y_continuous(&#39;Plant richness&#39;, expand = c(0, 0)) + 
   stat_smooth(method =&#39;lm&#39;, colour = &#39;black&#39;, se = TRUE) + 
-  facet_wrap( ~ var, ncol = 9, scales = &#39;free_x&#39;) +
+  facet_wrap( ~ var, ncol = 3, scales = &#39;free_x&#39;) +
   theme_bw() + 
   theme(
     legend.position = &#39;top&#39;,

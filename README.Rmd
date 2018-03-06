@@ -229,7 +229,7 @@ print(pinset, vp = v3)
 ```
 
 ## Fig 2
-```{r Fig2, fig.height = 3, fig.width = 12}
+```{r Fig2, fig.height = 7, fig.width = 6}
 ######
 # diagnostic plots
 data(map_dat)
@@ -262,7 +262,7 @@ p3 <- ggplot(toplo, aes(x = val, y = SpeciesRichness, fill = Ecoregion, colour =
   # annotation_logticks(sides = "b") +
   scale_y_continuous('Plant richness', expand = c(0, 0)) + 
   stat_smooth(method ='lm', colour = 'black', se = TRUE) + 
-  facet_wrap( ~ var, ncol = 9, scales = 'free_x') +
+  facet_wrap( ~ var, ncol = 3, scales = 'free_x') +
   theme_bw() + 
   theme(
     legend.position = 'top',
